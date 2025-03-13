@@ -142,25 +142,41 @@ function content_audit_uninstall() {
 register_uninstall_hook( __FILE__, 'content_audit_uninstall' );
 
 /**
- * Display a warning message when plugin deletion is being considered.
+ * Add a confirmation dialog when uninstalling the plugin.
  *
  * @return void
  */
-function content_audit_display_uninstall_warning() {
-	// Only show warning on plugins page.
+function content_audit_add_uninstall_confirmation() {
+	// Only run on the plugins page.
 	$screen = get_current_screen();
 	if ( ! $screen || 'plugins' !== $screen->id ) {
 		return;
 	}
 
-	// Add the warning message.
+	// Add JavaScript to create a confirmation dialog.
 	?>
-	<div class="notice notice-warning">
-		<p>
-			<strong><?php esc_html_e( 'Warning:', 'content-audit' ); ?></strong>
-			<?php esc_html_e( 'Uninstalling the Content Audit plugin will permanently delete all content audit data, including all submissions. This action cannot be undone.', 'content-audit' ); ?>
-		</p>
-	</div>
+	<script type="text/javascript">
+	document.addEventListener('DOMContentLoaded', function() {
+		// Find the Content Audit plugin's delete link.
+		const deleteLinks = document.querySelectorAll('a.delete[data-plugin="content-audit/content-audit.php"]');
+		
+		if (deleteLinks.length > 0) {
+			// Add click event listener to each delete link.
+			deleteLinks.forEach(function(link) {
+				link.addEventListener('click', function(event) {
+					// Prevent the default action.
+					event.preventDefault();
+					
+					// Show confirmation dialog.
+					if (confirm('<?php echo esc_js( __( 'WARNING: Uninstalling the Content Audit plugin will permanently delete all content audit data, including all submissions. This action cannot be undone. Are you sure you want to continue?', 'content-audit' ) ); ?>')) {
+						// If confirmed, follow the original link.
+						window.location.href = this.href;
+					}
+				});
+			});
+		}
+	});
+	</script>
 	<?php
 }
-add_action( 'admin_notices', 'content_audit_display_uninstall_warning' );
+add_action( 'admin_head', 'content_audit_add_uninstall_confirmation' );
