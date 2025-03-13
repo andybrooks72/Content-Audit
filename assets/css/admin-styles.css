@@ -1,0 +1,66 @@
+/**
+ * Content Audit Admin Styles
+ */
+
+/* Table styles */
+.content-audit-table {
+    border-collapse: collapse;
+    width: 100%;
+    max-width: 1500px;
+    margin-top: 20px;
+}
+
+.content-audit-table th, 
+.content-audit-table td {
+    padding: 12px;
+    text-align: left;
+}
+
+.content-audit-table th {
+    background: #151515;
+    color: #fff;
+    font-weight: 600;
+}
+
+.content-audit-table tbody th {
+    background: #f1f1f1;
+    color: #333;
+    font-weight: 600;
+}
+
+.content-audit-table tr.overdue {
+    border-bottom: 2px solid #d9042b;
+}
+
+/* Button styles */
+.content-audit-table .button-red {
+    background: #d9042b;
+    color: #fff;
+    border-color: #d9042b;
+}
+
+.content-audit-table .button-red:hover {
+    background: #b5021f;
+    border-color: #b5021f;
+    color: #fff;
+}
+
+/* Flex container for email button and confirmation */
+.flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Success message */
+.message {
+    color: #46b450;
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+/* Warning icon */
+.warning-icon {
+    color: #d9042b;
+    font-weight: bold;
+}
