@@ -71,8 +71,21 @@ function content_audit_render_submissions_page() {
 
 	// Check if the table exists before querying.
 	if ( $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" ) === $table_name ) { // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// Process filter parameters if set.
+		$where_clause = '';
+		$filter_stakeholder = isset( $_GET['filter_stakeholder'] ) ? sanitize_text_field( wp_unslash( $_GET['filter_stakeholder'] ) ) : '';
+		
+		// Add stakeholder filter if provided.
+		if ( ! empty( $filter_stakeholder ) ) {
+			$where_clause = $wpdb->prepare( " WHERE stakeholder_name LIKE %s", '%' . $wpdb->esc_like( $filter_stakeholder ) . '%' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		}
+		
+		// Get all stakeholder names for the filter dropdown.
+		$stakeholders = $wpdb->get_col( "SELECT DISTINCT stakeholder_name FROM $table_name ORDER BY stakeholder_name ASC" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		
+		// Get filtered submissions.
 		$submissions = $wpdb->get_results(
-			"SELECT * FROM $table_name ORDER BY submission_date DESC", // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			"SELECT * FROM $table_name" . $where_clause . " ORDER BY submission_date DESC", // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			ARRAY_A
 		);
 	} else {
@@ -98,8 +111,21 @@ function content_audit_render_submissions_page() {
 
 		// Check if the table was created successfully.
 		if ( $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" ) == $table_name ) { // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			// Process filter parameters if set.
+			$where_clause = '';
+			$filter_stakeholder = isset( $_GET['filter_stakeholder'] ) ? sanitize_text_field( wp_unslash( $_GET['filter_stakeholder'] ) ) : '';
+			
+			// Add stakeholder filter if provided.
+			if ( ! empty( $filter_stakeholder ) ) {
+				$where_clause = $wpdb->prepare( " WHERE stakeholder_name LIKE %s", '%' . $wpdb->esc_like( $filter_stakeholder ) . '%' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			}
+			
+			// Get all stakeholder names for the filter dropdown.
+			$stakeholders = $wpdb->get_col( "SELECT DISTINCT stakeholder_name FROM $table_name ORDER BY stakeholder_name ASC" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			
+			// Get filtered submissions.
 			$submissions = $wpdb->get_results(
-				"SELECT * FROM $table_name ORDER BY submission_date DESC", // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+				"SELECT * FROM $table_name" . $where_clause . " ORDER BY submission_date DESC", // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 				ARRAY_A
 			);
 		}
@@ -114,6 +140,25 @@ function content_audit_render_submissions_page() {
 		<?php if ( ! empty( $submissions ) ) : ?>
 			<div class="tablenav top">
 				<div class="alignleft actions">
+					<!-- Stakeholder filter dropdown -->
+					<form method="get" action="" style="display: inline-block; margin-right: 10px;">
+						<input type="hidden" name="page" value="content-audit-submissions" />
+						<select name="filter_stakeholder" id="filter-stakeholder">
+							<option value=""><?php esc_html_e( 'All Stakeholders', 'content-audit' ); ?></option>
+							<?php foreach ( $stakeholders as $stakeholder ) : ?>
+								<option value="<?php echo esc_attr( $stakeholder ); ?>" <?php selected( $filter_stakeholder, $stakeholder ); ?>>
+									<?php echo esc_html( $stakeholder ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<input type="submit" class="button" value="<?php esc_attr_e( 'Filter', 'content-audit' ); ?>" />
+						<?php if ( ! empty( $filter_stakeholder ) ) : ?>
+							<a href="<?php echo esc_url( remove_query_arg( 'filter_stakeholder' ) ); ?>" class="button">
+								<?php esc_html_e( 'Reset', 'content-audit' ); ?>
+							</a>
+						<?php endif; ?>
+					</form>
+					
 					<a href="<?php echo esc_url( add_query_arg( 'export_csv', '1' ) ); ?>" class="button button-primary">
 						<?php esc_html_e( 'Export to CSV', 'content-audit' ); ?>
 					</a>
@@ -217,9 +262,18 @@ function content_audit_export_submissions_csv( $table_name ) {
 		return;
 	}
 
+	// Process filter parameters if set.
+	$where_clause = '';
+	$filter_stakeholder = isset( $_GET['filter_stakeholder'] ) ? sanitize_text_field( wp_unslash( $_GET['filter_stakeholder'] ) ) : '';
+	
+	// Add stakeholder filter if provided.
+	if ( ! empty( $filter_stakeholder ) ) {
+		$where_clause = $wpdb->prepare( " WHERE stakeholder_name LIKE %s", '%' . $wpdb->esc_like( $filter_stakeholder ) . '%' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+	}
+
 	// Get submissions from the database.
 	$submissions = $wpdb->get_results(
-		"SELECT * FROM $table_name ORDER BY submission_date DESC", // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		"SELECT * FROM $table_name" . $where_clause . " ORDER BY submission_date DESC", // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		ARRAY_A
 	);
 
