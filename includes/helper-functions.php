@@ -13,27 +13,39 @@ if ( ! defined( 'WPINC' ) ) {
 /**
  * Update the email template function to include form URL.
  *
- * @param string   $page_title The page title.
- * @param string   $page_url The page URL.
+ * @param string   $content_title The content title.
+ * @param string   $content_url The content URL.
  * @param DateTime $date The date object.
  * @param string   $format_out The date format.
- * @param int      $page_id The page ID for generating the form URL.
+ * @param int      $content_id The content ID for generating the form URL.
  * @return string The email template.
  */
-function content_audit_get_email_template_with_form( $page_title, $page_url, $date, $format_out, $page_id = 0 ) {
-	// Generate form URL if page ID is provided.
+function content_audit_get_email_template_with_form( $content_title, $content_url, $date, $format_out, $content_id = 0 ) {
+	// Generate form URL if content ID is provided.
 	$form_url = '';
-	if ( $page_id && function_exists( 'content_audit_generate_form_url' ) ) {
-		$form_url = content_audit_generate_form_url( $page_id );
+	if ( $content_id && function_exists( 'content_audit_generate_form_url' ) ) {
+		$form_url = content_audit_generate_form_url( $content_id );
 	}
 
+	// Get the content type (post or page).
+	$content_type = 'content';
+	if ( $content_id ) {
+		$post = get_post( $content_id );
+		if ( $post && in_array( $post->post_type, array( 'post', 'page' ), true ) ) {
+			$content_type = $post->post_type;
+		}
+	}
+
+	// Create a properly capitalized content type label.
+	$content_type_label = ucfirst( $content_type );
+
 	// Get the original template.
-	$message = content_audit_get_email_template( $page_title, $page_url, $date, $format_out );
+	$message = content_audit_get_email_template( $content_title, $content_url, $date, $format_out );
 
 	// If we have a form URL, add it to the template.
 	if ( $form_url ) {
 		// Find the list item for reviewing content.
-		$review_content_li = '<li style="margin:0 0 10px 30px;">Review the content of the page.</li>';
+		$review_content_li = '<li style="margin:0 0 10px 30px;">Review the content of the ' . $content_type . '.</li>';
 
 		// Add the form URL after the review content list item.
 		$form_url_li = '<li style="margin:0 0 10px 30px;">Complete the review form: <a href="' . esc_url( $form_url ) . '" style="color: #0073aa; text-decoration: underline;">Content Review Form</a></li>';
@@ -60,23 +72,32 @@ add_action( 'init', 'content_audit_update_email_process' );
  * Filter the email template to include the form URL.
  *
  * @param string   $message The email message.
- * @param string   $page_title The page title.
- * @param string   $page_url The page URL.
+ * @param string   $content_title The content title.
+ * @param string   $content_url The content URL.
  * @param DateTime $date The date object.
- * @param int      $page_id The page ID.
+ * @param int      $content_id The content ID.
  * @return string The filtered email message.
  */
-function content_audit_filter_email_template( $message, $page_title, $page_url, $date, $page_id ) {
-	// Generate form URL if page ID is provided.
+function content_audit_filter_email_template( $message, $content_title, $content_url, $date, $content_id ) {
+	// Generate form URL if content ID is provided.
 	$form_url = '';
-	if ( $page_id && function_exists( 'content_audit_generate_form_url' ) ) {
-		$form_url = content_audit_generate_form_url( $page_id );
+	if ( $content_id && function_exists( 'content_audit_generate_form_url' ) ) {
+		$form_url = content_audit_generate_form_url( $content_id );
+	}
+
+	// Get the content type (post or page).
+	$content_type = 'content';
+	if ( $content_id ) {
+		$post = get_post( $content_id );
+		if ( $post && in_array( $post->post_type, array( 'post', 'page' ), true ) ) {
+			$content_type = $post->post_type;
+		}
 	}
 
 	// If we have a form URL, add it to the template.
 	if ( $form_url ) {
 		// Find the list item for reviewing content.
-		$review_content_li = '<li style="margin:0 0 10px 30px;">Review the content of the page.</li>';
+		$review_content_li = '<li style="margin:0 0 10px 30px;">Review the content of the ' . $content_type . '.</li>';
 
 		// Add the form URL after the review content list item.
 		$form_url_li = '<li style="margin:0 0 10px 30px;">Complete the review form: <a href="' . esc_url( $form_url ) . '" style="color: #0073aa; text-decoration: underline;">Content Review Form</a></li>';
@@ -87,7 +108,6 @@ function content_audit_filter_email_template( $message, $page_title, $page_url, 
 
 	return $message;
 }
-add_action( 'init', 'content_audit_update_email_process' );
 
 /**
  * Update email content to include form URL.
@@ -98,30 +118,30 @@ add_action( 'init', 'content_audit_update_email_process' );
 function content_audit_update_email_content_with_form( $args ) {
 	// Check if this is a content audit email.
 	if ( isset( $args['subject'] ) && strpos( $args['subject'], 'requires your attention' ) !== false ) {
-		// Extract page ID from the email content or from hidden field.
-		$page_id = 0;
+		// Extract content ID from the email content or from hidden field.
+		$content_id = 0;
 
 		// Try to extract from URL parameter.
 		preg_match( '/page-id=(\d+)/', $args['message'], $matches );
 		if ( isset( $matches[1] ) ) {
-			$page_id = intval( $matches[1] );
+			$content_id = intval( $matches[1] );
 		}
 
-		// If we have a page ID, update the email content.
-		if ( $page_id ) {
-			// Get page details.
-			$page_title = get_the_title( $page_id );
+		// If we have a content ID, update the email content.
+		if ( $content_id ) {
+			// Get content details.
+			$content_title = get_the_title( $content_id );
 
 			// Get the permalink.
-			$permalink = get_permalink( $page_id );
+			$permalink = get_permalink( $content_id );
 
-			// Convert content page URLs to use the live site URL.
+			// Convert content URLs to use the live site URL.
 			$site_url      = site_url();
 			$relative_path = str_replace( $site_url, '', $permalink );
-			$page_url      = 'https://www.pepper.money' . $relative_path;
+			$content_url   = 'https://www.pepper.money' . $relative_path;
 
 			// Get next review date.
-			$next_review_date = get_field( 'next_review_date', $page_id );
+			$next_review_date = get_field( 'next_review_date', $content_id );
 			if ( empty( $next_review_date ) ) {
 				return $args;
 			}
@@ -130,7 +150,7 @@ function content_audit_update_email_content_with_form( $args ) {
 			$format_out = 'F d, Y';
 
 			// Generate new email content with form URL.
-			$args['message'] = content_audit_get_email_template_with_form( $page_title, $page_url, $date, $format_out, $page_id );
+			$args['message'] = content_audit_get_email_template_with_form( $content_title, $content_url, $date, $format_out, $content_id );
 		}
 	}
 

@@ -22,20 +22,39 @@ function content_audit_display_table() {
 
 	// Get filter value from URL parameter, default to 30days.
 	$filter = isset( $_GET['filter'] ) ? sanitize_text_field( wp_unslash( $_GET['filter'] ) ) : '30days';
+	
+	// Get content type from URL parameter, default to pages.
+	$content_type = isset( $_GET['content_type'] ) ? sanitize_text_field( wp_unslash( $_GET['content_type'] ) ) : 'pages';
+	
+	// Ensure content_type is valid.
+	if ( ! in_array( $content_type, array( 'pages', 'posts' ), true ) ) {
+		$content_type = 'pages';
+	}
 
-	// Add filter dropdown.
+	// Add tabs for switching between pages and posts.
 	?>
+	<div class="nav-tab-wrapper">
+		<a href="<?php echo esc_url( add_query_arg( array( 'page' => 'content-audit', 'content_type' => 'pages', 'filter' => $filter ) ) ); ?>" class="nav-tab <?php echo 'pages' === $content_type ? 'nav-tab-active' : ''; ?>">
+			<?php esc_html_e( 'Pages', 'content-audit' ); ?>
+		</a>
+		<a href="<?php echo esc_url( add_query_arg( array( 'page' => 'content-audit', 'content_type' => 'posts', 'filter' => $filter ) ) ); ?>" class="nav-tab <?php echo 'posts' === $content_type ? 'nav-tab-active' : ''; ?>">
+			<?php esc_html_e( 'Posts', 'content-audit' ); ?>
+		</a>
+	</div>
+	
+	<!-- Add filter dropdown -->
 	<div class="tablenav top">
 		<div class="alignleft actions">
 			<form method="get">
 				<input type="hidden" name="page" value="content-audit">
+				<input type="hidden" name="content_type" value="<?php echo esc_attr( $content_type ); ?>">
 				<select name="filter">
 					<option value="30days" <?php selected( $filter, '30days' ); ?>><?php esc_html_e( 'Next 30 Days & Overdue', 'content-audit' ); ?></option>
 					<option value="overdue" <?php selected( $filter, 'overdue' ); ?>><?php esc_html_e( 'Overdue Only', 'content-audit' ); ?></option>
 					<option value="3months" <?php selected( $filter, '3months' ); ?>><?php esc_html_e( 'Next 3 Months', 'content-audit' ); ?></option>
 					<option value="6months" <?php selected( $filter, '6months' ); ?>><?php esc_html_e( 'Next 6 Months', 'content-audit' ); ?></option>
 					<option value="12months" <?php selected( $filter, '12months' ); ?>><?php esc_html_e( 'Next 12 Months', 'content-audit' ); ?></option>
-					<option value="all" <?php selected( $filter, 'all' ); ?>><?php esc_html_e( 'All Pages', 'content-audit' ); ?></option>
+					<option value="all" <?php selected( $filter, 'all' ); ?>><?php esc_html_e( 'All Content', 'content-audit' ); ?></option>
 				</select>
 				<input type="submit" class="button" value="<?php esc_attr_e( 'Filter', 'content-audit' ); ?>">
 			</form>
@@ -47,7 +66,7 @@ function content_audit_display_table() {
 	echo '<table class="content-audit-table">';
 	echo '<thead>';
 	echo '<tr>';
-	echo '<th>Page Title</th>';
+	echo '<th>' . esc_html( 'posts' === $content_type ? 'Post Title' : 'Page Title' ) . '</th>';
 	echo '<th>Stakeholder Name</th>';
 	echo '<th>Stakeholder Dept</th>';
 	echo '<th>Email</th>';
@@ -89,7 +108,7 @@ function content_audit_display_table() {
 	// Add filter-specific conditions.
 	switch ( $filter ) {
 		case 'overdue':
-			// Only show overdue pages.
+			// Only show overdue content.
 			$meta_query = array(
 				'relation' => 'AND',
 				$base_meta_query,
@@ -103,7 +122,7 @@ function content_audit_display_table() {
 			break;
 
 		case '30days':
-			// Show pages due in next 30 days or overdue.
+			// Show content due in next 30 days or overdue.
 			$thirty_days = gmdate( 'Ymd', strtotime( '+30 days' ) );
 			$meta_query  = array(
 				'relation' => 'AND',
@@ -127,7 +146,7 @@ function content_audit_display_table() {
 			break;
 
 		case '3months':
-			// Show pages due in next 3 months.
+			// Show content due in next 3 months.
 			$three_months = gmdate( 'Ymd', strtotime( '+3 months' ) );
 			$meta_query   = array(
 				'relation' => 'AND',
@@ -142,7 +161,7 @@ function content_audit_display_table() {
 			break;
 
 		case '6months':
-			// Show pages due in next 6 months.
+			// Show content due in next 6 months.
 			$six_months = gmdate( 'Ymd', strtotime( '+6 months' ) );
 			$meta_query = array(
 				'relation' => 'AND',
@@ -157,7 +176,7 @@ function content_audit_display_table() {
 			break;
 
 		case '12months':
-			// Show pages due in next 12 months.
+			// Show content due in next 12 months.
 			$twelve_months = gmdate( 'Ymd', strtotime( '+12 months' ) );
 			$meta_query    = array(
 				'relation' => 'AND',
@@ -172,7 +191,7 @@ function content_audit_display_table() {
 			break;
 
 		case 'all':
-			// Show all pages with next_review_date.
+			// Show all content with next_review_date.
 			$meta_query = $base_meta_query;
 			break;
 
@@ -203,7 +222,7 @@ function content_audit_display_table() {
 
 	// Query arguments.
 	$args = array(
-		'post_type'      => 'page',
+		'post_type'      => $content_type === 'posts' ? 'post' : 'page',
 		'post_status'    => 'publish',
 		'posts_per_page' => $posts_per_page,
 		'meta_query'     => $meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
@@ -261,13 +280,14 @@ function content_audit_display_table() {
 						<input type="hidden" name="<?php echo esc_attr( $unique_id ); ?>" value="1">
 						<input type="hidden" name="send_email_nonce" value="<?php echo esc_attr( $nonce ); ?>">
 						<input type="hidden" name="page_id" value="<?php echo esc_attr( $page_id ); ?>">
+						<input type="hidden" name="content_type" value="<?php echo esc_attr( $content_type ); ?>">
 					</form>
 					<?php
 					if ( isset( $_POST['send_email_nonce'] ) ) {
 						$nonce = sanitize_text_field( wp_unslash( $_POST['send_email_nonce'] ) );
 						if ( isset( $_POST[ "$unique_id" ] ) && null !== $nonce && wp_verify_nonce( $nonce, 'send_email_nonce' ) ) {
 							$to      = $stakeholder_email;
-							$subject = 'The following page requires your attention: ' . get_the_title();
+							$subject = 'The following ' . ($content_type === 'posts' ? 'post' : 'page') . ' requires your attention: ' . get_the_title();
 							$headers = 'From: ux@pepper.money' . "\r\n" .
 								'cc: ' . $admin_email . "\r\n" .
 								'Reply-To: ' . $admin_email . "\r\n" .
@@ -304,7 +324,7 @@ function content_audit_display_table() {
 		endwhile;
 
 	else :
-		echo '<tr><td colspan="6">' . esc_html__( 'No pages found matching the selected criteria.', 'content-audit' ) . '</td></tr>';
+		echo '<tr><td colspan="6">' . esc_html__( 'No ' . ($content_type === 'posts' ? 'posts' : 'pages') . ' found matching the selected criteria.', 'content-audit' ) . '</td></tr>';
 	endif;
 
 	wp_reset_postdata();
@@ -329,6 +349,18 @@ function content_audit_get_email_template( $page_title, $page_url, $date, $forma
 	if ( $page_id && function_exists( 'content_audit_generate_form_url' ) ) {
 		$form_url = content_audit_generate_form_url( $page_id );
 	}
+
+	// Get the content type (post or page).
+	$content_type = 'content';
+	if ( $page_id ) {
+		$post = get_post( $page_id );
+		if ( $post && in_array( $post->post_type, array( 'post', 'page' ), true ) ) {
+			$content_type = $post->post_type;
+		}
+	}
+
+	// Create a properly capitalized content type label.
+	$content_type_label = ucfirst( $content_type );
 
 	// phpcs:disable
 	$message = "
@@ -582,8 +614,8 @@ function content_audit_get_email_template( $page_title, $page_url, $date, $forma
 										style='padding: 20px; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #555555;'>
 										<h1
 											style='margin: 0 0 10px 0; font-family: sans-serif; font-size: 25px; line-height: 30px; color: #333333; font-weight: normal;'>
-											You have been assigned a page to review the content of: $page_title</h1>
-										<p style='margin: 0;'>The page that needs to be reviewed: <a href='$page_url'>$page_title</a></p>
+											You have been assigned a $content_type_label to review the content of: $page_title</h1>
+										<p style='margin: 0;'>The $content_type_label that needs to be reviewed: <a href='$page_url'>$page_title</a></p>
 									</td>
 								</tr>
 								<tr>
@@ -591,10 +623,10 @@ function content_audit_get_email_template( $page_title, $page_url, $date, $forma
 										style='padding: 20px; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #555555;'>
 										<h2
 											style='margin: 0 0 10px 0; font-family: sans-serif; font-size: 18px; line-height: 22px; color: #333333; font-weight: bold;'>
-											Please can review the content on the page by:</h2>
+											Please can review the content on the $content_type_label by:</h2>
 										<ul style='padding: 0; margin: 0 0 10px 0; list-style-type: disc;'>
-											<li style='margin:0 0 10px 30px;' class='list-item-first'>Click the page link above to view the content that needs review.</li>
-											<li style='margin:0 0 10px 30px;'>Review the content of the page.</li>
+											<li style='margin:0 0 10px 30px;' class='list-item-first'>Click the $content_type_label link above to view the content that needs review.</li>
+											<li style='margin:0 0 10px 30px;'>Review the content of the $content_type_label.</li>
 											" . ($form_url ? "<li style='margin:0 0 10px 30px; font-weight: bold;'>Complete the review by using this form: <a href='$form_url' style='color: #0073aa; text-decoration: underline; font-weight: bold; background-color: #f0f8ff; padding: 3px 6px; border-radius: 3px;'>Content Review Form</a></li>" : "") . "
 										</ul>
 										<p style='margin: 0 0 10px 0;'>The content needs to be reviewed by the folowing date: <strong>" . $date->format( $format_out ) . "</strong></p>

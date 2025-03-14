@@ -18,6 +18,7 @@ if ( ! defined( 'WPINC' ) ) {
 function content_audit_create_submissions_table() {
 	global $wpdb;
 	$table_name = $wpdb->prefix . 'content_audit_submissions';
+	$charset_collate = $wpdb->get_charset_collate();
 
 	// Check if table exists.
 	$table_exists = $wpdb->get_var(
@@ -29,12 +30,11 @@ function content_audit_create_submissions_table() {
 
 	// If table doesn't exist, create it.
 	if ( ! $table_exists ) {
-		$charset_collate = $wpdb->get_charset_collate();
-
 		$sql = "CREATE TABLE $table_name (
 			id mediumint(9) NOT NULL AUTO_INCREMENT,
-			page_id bigint(20) NOT NULL,
-			page_title varchar(255) NOT NULL,
+			content_id bigint(20) NOT NULL,
+			content_title varchar(255) NOT NULL,
+			content_type varchar(20) NOT NULL DEFAULT 'page',
 			stakeholder_name varchar(100) NOT NULL,
 			stakeholder_email varchar(100) NOT NULL,
 			stakeholder_department varchar(100) NOT NULL,
@@ -47,6 +47,126 @@ function content_audit_create_submissions_table() {
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		dbDelta( $sql );
+	} else {
+		// Check if the content_type column exists, add it if it doesn't.
+		$column_exists = $wpdb->get_results( "SHOW COLUMNS FROM $table_name LIKE 'content_type'" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		if ( empty( $column_exists ) ) {
+			$wpdb->query( "ALTER TABLE $table_name ADD COLUMN content_type varchar(20) NOT NULL DEFAULT 'page' AFTER page_title" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		}
+
+		// Check if the content_id column exists, add it if it doesn't.
+		$column_exists = $wpdb->get_results( "SHOW COLUMNS FROM $table_name LIKE 'content_id'" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		if ( empty( $column_exists ) ) {
+			// Create a temporary table with the new structure
+			$temp_table_name = $table_name . '_temp';
+			
+			// Drop the temporary table if it exists
+			$wpdb->query( "DROP TABLE IF EXISTS $temp_table_name" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			
+			// Create the temporary table with the new structure
+			$sql = "CREATE TABLE $temp_table_name (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				content_id bigint(20) NOT NULL,
+				content_title varchar(255) NOT NULL,
+				content_type varchar(20) NOT NULL DEFAULT 'page',
+				stakeholder_name varchar(100) NOT NULL,
+				stakeholder_email varchar(100) NOT NULL,
+				stakeholder_department varchar(100) NOT NULL,
+				submission_date datetime NOT NULL,
+				needs_changes tinyint(1) NOT NULL DEFAULT 0,
+				support_ticket_url varchar(255) DEFAULT '',
+				next_review_date datetime NOT NULL,
+				PRIMARY KEY  (id)
+			) $charset_collate;";
+			
+			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+			dbDelta( $sql );
+			
+			// Copy data from the old table to the new one
+			$wpdb->query( "INSERT INTO $temp_table_name (id, content_id, content_title, content_type, stakeholder_name, stakeholder_email, stakeholder_department, submission_date, needs_changes, support_ticket_url, next_review_date) 
+			               SELECT id, page_id, page_title, content_type, stakeholder_name, stakeholder_email, stakeholder_department, submission_date, needs_changes, support_ticket_url, next_review_date 
+			               FROM $table_name" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			
+			// Drop the old table
+			$wpdb->query( "DROP TABLE $table_name" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			
+			// Rename the temporary table to the original name
+			$wpdb->query( "RENAME TABLE $temp_table_name TO $table_name" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		}
+	}
+}
+
+/**
+ * Insert submission into the database.
+ *
+ * @param array $data Submission data.
+ * @return int|false The number of rows inserted, or false on error.
+ */
+function content_audit_insert_submission( $data ) {
+	global $wpdb;
+	$table_name = $wpdb->prefix . 'content_audit_submissions';
+
+	// Check if the table has the new column structure
+	$has_content_id = $wpdb->get_var( "SHOW COLUMNS FROM $table_name LIKE 'content_id'" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+
+	if ( $has_content_id ) {
+		// New column structure exists, use content_id and content_title
+		return $wpdb->insert(
+			$table_name,
+			array(
+				'content_id'             => $data['content_id'],
+				'content_title'          => $data['content_title'],
+				'content_type'           => $data['content_type'],
+				'stakeholder_name'       => $data['stakeholder_name'],
+				'stakeholder_email'      => $data['stakeholder_email'],
+				'stakeholder_department' => $data['stakeholder_department'],
+				'submission_date'        => $data['submission_date'],
+				'needs_changes'          => $data['needs_changes'],
+				'support_ticket_url'     => $data['support_ticket_url'],
+				'next_review_date'       => $data['next_review_date'],
+			),
+			array(
+				'%d',
+				'%s',
+				'%s',
+				'%s',
+				'%s',
+				'%s',
+				'%s',
+				'%d',
+				'%s',
+				'%s',
+			)
+		);
+	} else {
+		// Old column structure, use page_id and page_title
+		return $wpdb->insert(
+			$table_name,
+			array(
+				'page_id'                => $data['content_id'],
+				'page_title'             => $data['content_title'],
+				'content_type'           => $data['content_type'],
+				'stakeholder_name'       => $data['stakeholder_name'],
+				'stakeholder_email'      => $data['stakeholder_email'],
+				'stakeholder_department' => $data['stakeholder_department'],
+				'submission_date'        => $data['submission_date'],
+				'needs_changes'          => $data['needs_changes'],
+				'support_ticket_url'     => $data['support_ticket_url'],
+				'next_review_date'       => $data['next_review_date'],
+			),
+			array(
+				'%d',
+				'%s',
+				'%s',
+				'%s',
+				'%s',
+				'%s',
+				'%s',
+				'%d',
+				'%s',
+				'%s',
+			)
+		);
 	}
 }
 
@@ -60,24 +180,24 @@ function content_audit_form_shortcode( $atts ) {
 	// Extract shortcode attributes.
 	$atts = shortcode_atts(
 		array(
-			'page_id' => 0,
-			'token'   => '',
+			'content_id' => 0,
+			'token'      => '',
 		),
 		$atts,
 		'content_audit_form'
 	);
 
-	// Check if page ID and token are provided as URL parameters if not in shortcode.
-	if ( empty( $atts['page_id'] ) && isset( $_GET['content_page_id'] ) ) {
-		$atts['page_id'] = absint( $_GET['content_page_id'] );
+	// Check if content ID and token are provided as URL parameters if not in shortcode.
+	if ( empty( $atts['content_id'] ) && isset( $_GET['content_page_id'] ) ) {
+		$atts['content_id'] = absint( $_GET['content_page_id'] );
 	}
 
 	if ( empty( $atts['token'] ) && isset( $_GET['token'] ) ) {
 		$atts['token'] = sanitize_text_field( wp_unslash( $_GET['token'] ) );
 	}
 
-	// Check if page ID and token are provided.
-	if ( empty( $atts['page_id'] ) || empty( $atts['token'] ) ) {
+	// Check if content ID and token are provided.
+	if ( empty( $atts['content_id'] ) || empty( $atts['token'] ) ) {
 		// If this is the form page created by the plugin, show a helpful message.
 		$form_page_id = get_option( 'content_audit_form_page_id' );
 		if ( $form_page_id && get_the_ID() === (int) $form_page_id ) {
@@ -96,22 +216,25 @@ function content_audit_form_shortcode( $atts ) {
 	}
 
 	// Verify token.
-	$page_id        = absint( $atts['page_id'] );
-	$token          = sanitize_text_field( $atts['token'] );
-	$expected_token = wp_hash( 'content_audit_' . $page_id . get_the_title( $page_id ) );
+	$content_id        = absint( $atts['content_id'] );
+	$token             = sanitize_text_field( $atts['token'] );
+	$expected_token    = wp_hash( 'content_audit_' . $content_id . get_the_title( $content_id ) );
 
 	if ( $token !== $expected_token ) {
 		return '<p>' . esc_html__( 'Invalid or expired form link.', 'content-audit' ) . '</p>';
 	}
 
-	// Get page data.
-	$page = get_post( $page_id );
-	if ( ! $page || 'page' !== $page->post_type ) {
-		return '<p>' . esc_html__( 'Page not found.', 'content-audit' ) . '</p>';
+	// Get content data.
+	$content = get_post( $content_id );
+	if ( ! $content || ! in_array( $content->post_type, array( 'page', 'post' ), true ) ) {
+		return '<p>' . esc_html__( 'Content not found.', 'content-audit' ) . '</p>';
 	}
 
+	// Get content type.
+	$content_type = $content->post_type;
+
 	// Get ACF fields.
-	$content_audit = get_fields( $page_id );
+	$content_audit = get_fields( $content_id );
 	if ( empty( $content_audit ) ) {
 		return '<p>' . esc_html__( 'Content audit data not found.', 'content-audit' ) . '</p>';
 	}
@@ -129,7 +252,7 @@ function content_audit_form_shortcode( $atts ) {
 
 	if ( isset( $_POST['content_audit_submit'] ) && isset( $_POST['content_audit_nonce'] ) ) {
 		// Verify nonce.
-		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['content_audit_nonce'] ) ), 'content_audit_form_' . $page_id ) ) {
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['content_audit_nonce'] ) ), 'content_audit_form_' . $content_id ) ) {
 			$form_errors[] = esc_html__( 'Security verification failed. Please try again.', 'content-audit' );
 		} else {
 			// Check if the submissions table exists and create it if it doesn't.
@@ -157,19 +280,15 @@ function content_audit_form_shortcode( $atts ) {
 				}
 			}
 
-			// Save to database.
-			global $wpdb;
-			$table_name = $wpdb->prefix . 'content_audit_submissions';
-
 			// Get the current next review date or calculate a new one if not set.
 			$current_next_review_date = ! empty( $next_review_date ) ? $next_review_date : gmdate( 'Y-m-d H:i:s', strtotime( '+1 year' ) );
 
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-			$result = $wpdb->insert(
-				$table_name,
+			// Save to database using the helper function.
+			$result = content_audit_insert_submission(
 				array(
-					'page_id'                => $page_id,
-					'page_title'             => get_the_title( $page_id ),
+					'content_id'             => $content_id,
+					'content_title'          => get_the_title( $content_id ),
+					'content_type'           => $content_type,
 					'stakeholder_name'       => $stakeholder_name,
 					'stakeholder_email'      => $stakeholder_email,
 					'stakeholder_department' => $stakeholder_department,
@@ -177,19 +296,8 @@ function content_audit_form_shortcode( $atts ) {
 					'needs_changes'          => $needs_changes,
 					'support_ticket_url'     => $support_ticket_url,
 					'next_review_date'       => $current_next_review_date,
-				),
-				array(
-					'%d',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%d',
-					'%s',
-					'%s',
 				)
-			); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			);
 
 			if ( false !== $result ) {
 				$form_submitted  = true;
@@ -197,7 +305,7 @@ function content_audit_form_shortcode( $atts ) {
 
 				// Update ACF fields.
 				$current_date = gmdate( 'Y-m-d' );
-				update_field( 'last_review_date', $current_date, $page_id );
+				update_field( 'last_review_date', $current_date, $content_id );
 
 				// If no changes are needed, set next review date to 1 year from now.
 				if ( ! $needs_changes ) {
@@ -205,7 +313,7 @@ function content_audit_form_shortcode( $atts ) {
 					$next_review_date = gmdate( 'Y-m-d H:i:s', strtotime( '+1 year', strtotime( $current_date ) ) );
 
 					// Update the next review date field.
-					update_field( 'next_review_date', $next_review_date, $page_id );
+					update_field( 'next_review_date', $next_review_date, $content_id );
 				}
 
 				// Send email notification to admin.
@@ -213,7 +321,7 @@ function content_audit_form_shortcode( $atts ) {
 				$subject     = sprintf(
 					/* translators: %s: page title */
 					esc_html__( 'Content Review Submission for %s', 'content-audit' ),
-					get_the_title( $page_id )
+					get_the_title( $content_id )
 				);
 
 				// Build HTML email message using the same template as audit-panel-updated.php.
@@ -416,7 +524,7 @@ function content_audit_form_shortcode( $atts ) {
 						<!-- Preview Text Spacing Hack : BEGIN -->
 						<div
 							style='display: none; font-size: 1px; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden; mso-hide: all; font-family: sans-serif;'>
-							&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;
+							&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;
 						</div>
 						<!-- Preview Text Spacing Hack : END -->
 
@@ -449,7 +557,7 @@ function content_audit_form_shortcode( $atts ) {
 													style='padding: 20px; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #555555;'>
 													<h1
 														style='margin: 0 0 10px 0; font-family: sans-serif; font-size: 25px; line-height: 30px; color: #333333; font-weight: normal;'>
-														Content Review Submission for \"" . esc_html( get_the_title( $page_id ) ) . "\"</h1>
+														Content Review Submission for \"" . esc_html( get_the_title( $content_id ) ) . "\"</h1>
 													<p style='margin: 0;'>A content review has been submitted by <strong>" . esc_html( $stakeholder_name ) . "</strong>.</p>
 												</td>
 											</tr>
@@ -465,13 +573,13 @@ function content_audit_form_shortcode( $atts ) {
 															<td style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 15px; line-height: 20px;'><a href='";
 				
 				// Get the relative path from the permalink
-				$permalink = get_permalink( $page_id );
+				$permalink = get_permalink( $content_id );
 				$site_url  = site_url();
 				$relative_path = str_replace( $site_url, '', $permalink );
 				// Create the live site URL
 				$live_site_url = 'https://www.pepper.money' . $relative_path;
 				
-				$message .= esc_url( $live_site_url ) . "'>" . esc_html( get_the_title( $page_id ) ) . "</a></td>
+				$message .= esc_url( $live_site_url ) . "'>" . esc_html( get_the_title( $content_id ) ) . "</a></td>
 														</tr>
 														<tr>
 															<th style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; background-color: #f9f9f9; font-weight: 600; font-family: sans-serif; font-size: 15px; line-height: 20px;'>Stakeholder</th>
@@ -762,20 +870,38 @@ function content_audit_form_shortcode( $atts ) {
 			</div>
 			
 			<div class="content-audit-page-info">
-				<h3><?php echo esc_html__( 'Page Information', 'content-audit' ); ?></h3>
+				<h3>
+					<?php 
+					// Display different heading based on content type.
+					if ( 'page' === $content_type ) {
+						echo esc_html__( 'Page Information', 'content-audit' );
+					} else {
+						echo esc_html__( 'Post Information', 'content-audit' );
+					}
+					?>
+				</h3>
 				
 				<div class="content-audit-grid">
 					<div>
 						<p>
-							<strong><?php echo esc_html__( 'Page Title:', 'content-audit' ); ?></strong>
-							<span><?php echo esc_html( get_the_title( $page_id ) ); ?></span>
+							<strong>
+								<?php 
+								// Display different label based on content type.
+								if ( 'page' === $content_type ) {
+									echo esc_html__( 'Page Title:', 'content-audit' );
+								} else {
+									echo esc_html__( 'Post Title:', 'content-audit' );
+								}
+								?>
+							</strong>
+							<span><?php echo esc_html( get_the_title( $content_id ) ); ?></span>
 						</p>
 					
 						<p>
 							<strong><?php echo esc_html__( 'URL:', 'content-audit' ); ?></strong>
 							<?php
 							// Get the relative path from the permalink.
-							$permalink     = get_permalink( $page_id );
+							$permalink     = get_permalink( $content_id );
 							$site_url      = site_url();
 							$relative_path = str_replace( $site_url, '', $permalink );
 							// Create the live site URL.
@@ -805,21 +931,30 @@ function content_audit_form_shortcode( $atts ) {
 			</div>
 			
 			<form method="post" class="content-audit-form">
-				<?php wp_nonce_field( 'content_audit_form_' . $page_id, 'content_audit_nonce' ); ?>
+				<?php wp_nonce_field( 'content_audit_form_' . $content_id, 'content_audit_nonce' ); ?>
 				
 				<div class="form-field">
 					<fieldset>
-						<legend><?php echo esc_html__( 'Review Status:', 'content-audit' ); ?></legend>
+						<legend>
+							<?php 
+							// Display different label based on content type.
+							if ( 'page' === $content_type ) {
+								echo esc_html__( 'Page Review Status:', 'content-audit' );
+							} else {
+								echo esc_html__( 'Post Review Status:', 'content-audit' );
+							}
+							?>
+						</legend>
 						
 						<div class="content-audit-radio-options">
 							<label for="needs_changes_no" class="content-audit-radio-label">
 								<input type="radio" name="needs_changes" id="needs_changes_no" value="0" checked="checked" />
-								<span><?php echo esc_html__( 'This page is fine', 'content-audit' ); ?></span>
+								<span><?php echo esc_html__( 'Content is accurate and up-to-date', 'content-audit' ); ?></span>
 							</label>
 							
 							<label for="needs_changes_yes" class="content-audit-radio-label needs-changes">
 								<input type="radio" name="needs_changes" id="needs_changes_yes" value="1" />
-								<span><?php echo esc_html__( 'This page needs changes', 'content-audit' ); ?></span>
+								<span><?php echo esc_html__( 'Content needs changes', 'content-audit' ); ?></span>
 							</label>
 						</div>
 					</fieldset>
@@ -885,12 +1020,12 @@ function content_audit_form_shortcode( $atts ) {
 /**
  * Generate a secure URL for the content audit form.
  *
- * @param int $page_id The page ID to generate a form URL for.
+ * @param int $content_id The content ID (post or page).
  * @return string The form URL.
  */
-function content_audit_generate_form_url( $page_id ) {
+function content_audit_generate_form_url( $content_id ) {
 	// Create a secure token.
-	$token = wp_hash( 'content_audit_' . $page_id . get_the_title( $page_id ) );
+	$token = wp_hash( 'content_audit_' . $content_id . get_the_title( $content_id ) );
 
 	// Look for a page with the content review form shortcode.
 	$form_page = null;
@@ -942,13 +1077,13 @@ function content_audit_generate_form_url( $page_id ) {
 		}
 	}
 
-	// Ensure we're using the form page ID and not the content page ID for the URL base.
+	// Ensure we're using the form page ID and not the content ID for the URL base.
 	$form_page_url = get_permalink( $form_page_id );
 
 	// Generate the URL with parameters.
 	$url = add_query_arg(
 		array(
-			'content_page_id' => $page_id,
+			'content_page_id' => $content_id,
 			'token'           => $token,
 		),
 		$form_page_url
@@ -957,7 +1092,7 @@ function content_audit_generate_form_url( $page_id ) {
 	// Make sure the URL is properly formed.
 	if ( ! filter_var( $url, FILTER_VALIDATE_URL ) ) {
 		// Fallback to a simpler URL construction if add_query_arg fails.
-		$url = trailingslashit( $form_page_url ) . '?content_page_id=' . rawurlencode( $page_id ) . '&token=' . rawurlencode( $token );
+		$url = trailingslashit( $form_page_url ) . '?content_page_id=' . rawurlencode( $content_id ) . '&token=' . rawurlencode( $token );
 	}
 
 	return $url;

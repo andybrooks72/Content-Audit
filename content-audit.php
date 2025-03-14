@@ -3,7 +3,7 @@
  * Plugin Name: Content Audit
  * Plugin URI: https://www.pepper.money
  * Description: Adds a custom Content Audit page to help track and manage content review dates.
- * Version: 1.0.1
+ * Version: 1.1.0
  * Author: Pepper Money
  * Author URI: https://www.pepper.money
  * Text Domain: content-audit
@@ -17,7 +17,7 @@ if ( ! defined( 'WPINC' ) ) {
 }
 
 // Define plugin constants.
-define( 'CONTENT_AUDIT_VERSION', '1.0.0' );
+define( 'CONTENT_AUDIT_VERSION', '1.1.0' );
 define( 'CONTENT_AUDIT_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CONTENT_AUDIT_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
@@ -64,8 +64,9 @@ function content_audit_activate() {
 	// Create the submissions table.
 	$sql = "CREATE TABLE $table_name (
 		id mediumint(9) NOT NULL AUTO_INCREMENT,
-		page_id bigint(20) NOT NULL,
-		page_title varchar(255) NOT NULL,
+		content_id bigint(20) NOT NULL,
+		content_title varchar(255) NOT NULL,
+		content_type varchar(20) NOT NULL DEFAULT 'page',
 		stakeholder_name varchar(100) NOT NULL,
 		stakeholder_email varchar(100) NOT NULL,
 		stakeholder_department varchar(100) NOT NULL,
@@ -78,7 +79,7 @@ function content_audit_activate() {
 	require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 	dbDelta( $sql );
 	// Add version to options.
-	add_option( 'content_audit_db_version', CONTENT_AUDIT_VERSION );
+	update_option( 'content_audit_db_version', CONTENT_AUDIT_VERSION );
 }
 register_activation_hook( __FILE__, 'content_audit_activate' );
 
