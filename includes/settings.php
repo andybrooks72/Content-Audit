@@ -231,7 +231,7 @@ function content_audit_from_name_callback() {
  * @return void
  */
 function content_audit_success_message_callback() {
-	$options = get_option( 'content_audit_form_settings' );
+	$options         = get_option( 'content_audit_form_settings' );
 	$success_message = isset( $options['success_message'] ) ? $options['success_message'] : 'Thank you for reviewing this content. Your submission has been recorded.';
 	?>
 	<textarea id="content_audit_success_message" name="content_audit_form_settings[success_message]" rows="3" class="large-text"><?php echo esc_textarea( $success_message ); ?></textarea>

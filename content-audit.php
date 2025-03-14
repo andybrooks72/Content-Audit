@@ -138,8 +138,10 @@ function content_audit_uninstall() {
 	$wpdb->query( 'DROP TABLE IF EXISTS ' . $wpdb->prefix . 'content_audit_submissions' );
 	// phpcs:enable
 
-	// Delete the version option.
+	// Delete all plugin options.
 	delete_option( 'content_audit_db_version' );
+	delete_option( 'content_audit_email_settings' );
+	delete_option( 'content_audit_form_settings' );
 }
 register_uninstall_hook( __FILE__, 'content_audit_uninstall' );
 
