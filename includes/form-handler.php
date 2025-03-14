@@ -300,8 +300,11 @@ function content_audit_form_shortcode( $atts ) {
 			);
 
 			if ( false !== $result ) {
-				$form_submitted  = true;
-				$success_message = esc_html__( 'Thank you for reviewing this content. Your submission has been recorded.', 'content-audit' );
+				$form_submitted = true;
+				
+				// Get the success message from settings.
+				$form_settings = content_audit_get_form_settings();
+				$success_message = $form_settings['success_message'];
 
 				// Update ACF fields.
 				$current_date = gmdate( 'Y-m-d' );
@@ -524,7 +527,7 @@ function content_audit_form_shortcode( $atts ) {
 						<!-- Preview Text Spacing Hack : BEGIN -->
 						<div
 							style='display: none; font-size: 1px; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden; mso-hide: all; font-family: sans-serif;'>
-							&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;
+							&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;
 						</div>
 						<!-- Preview Text Spacing Hack : END -->
 
@@ -636,15 +639,20 @@ function content_audit_form_shortcode( $atts ) {
 				</html>
 				"; // phpcs:enable
 
+				// Get email settings.
+				$email_settings = content_audit_get_email_settings();
+				$notification_email = $email_settings['notification_email'];
+				$from_email = $email_settings['from_email'];
+				$from_name = $email_settings['from_name'];
+
 				// Set up email headers for HTML.
 				$headers = array(
-					'From: ux@pepper.money',
+					'From: ' . $from_name . ' <' . $from_email . '>',
 					'Content-Type: text/html; charset=UTF-8',
-					'Cc: ' . $admin_email,
-					'Reply-To: ' . $admin_email,
+					'Reply-To: ' . $notification_email,
 				);
 
-				wp_mail( $admin_email, $subject, $message, $headers );
+				wp_mail( $notification_email, $subject, $message, $headers );
 			} else {
 				$form_errors[] = esc_html__( 'Failed to save your submission. Please try again.', 'content-audit' );
 			}

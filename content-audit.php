@@ -3,7 +3,7 @@
  * Plugin Name: Content Audit
  * Plugin URI: https://www.pepper.money
  * Description: Adds a custom Content Audit page to help track and manage content review dates.
- * Version: 1.1.0
+ * Version: 1.1.1
  * Author: Pepper Money
  * Author URI: https://www.pepper.money
  * Text Domain: content-audit
@@ -17,16 +17,17 @@ if ( ! defined( 'WPINC' ) ) {
 }
 
 // Define plugin constants.
-define( 'CONTENT_AUDIT_VERSION', '1.1.0' );
+define( 'CONTENT_AUDIT_VERSION', '1.1.1' );
 define( 'CONTENT_AUDIT_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CONTENT_AUDIT_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
-// Include the admin page functionality.
-require_once CONTENT_AUDIT_PLUGIN_DIR . 'includes/audit-panel-updated.php';
-require_once CONTENT_AUDIT_PLUGIN_DIR . 'includes/admin-page.php';
-require_once CONTENT_AUDIT_PLUGIN_DIR . 'includes/form-handler.php';
-require_once CONTENT_AUDIT_PLUGIN_DIR . 'includes/submissions.php';
-require_once CONTENT_AUDIT_PLUGIN_DIR . 'includes/helper-functions.php';
+// Include required files.
+require_once plugin_dir_path( __FILE__ ) . 'includes/admin-page.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/audit-panel-updated.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/form-handler.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/submissions.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/settings.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/helper-functions.php';
 
 /**
  * Initialize the plugin.

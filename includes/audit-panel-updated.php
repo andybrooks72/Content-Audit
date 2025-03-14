@@ -256,7 +256,7 @@ function content_audit_display_table() {
 			$next_review_date  = $content_audit['next_review_date'];
 			$format_out        = 'F d, Y';
 			$date              = new DateTime( $next_review_date );
-			$admin_email       = 'marcus.taylor@pepper.money';
+			$admin_email       = get_option( 'admin_email' );
 			$unique_id         = 'send_email_' . get_the_ID();
 			$nonce             = wp_create_nonce( 'send_email_nonce' );
 			$page_id           = get_the_ID();
@@ -288,9 +288,16 @@ function content_audit_display_table() {
 						if ( isset( $_POST[ "$unique_id" ] ) && null !== $nonce && wp_verify_nonce( $nonce, 'send_email_nonce' ) ) {
 							$to      = $stakeholder_email;
 							$subject = 'The following ' . ($content_type === 'posts' ? 'post' : 'page') . ' requires your attention: ' . get_the_title();
-							$headers = 'From: ux@pepper.money' . "\r\n" .
-								'cc: ' . $admin_email . "\r\n" .
-								'Reply-To: ' . $admin_email . "\r\n" .
+							// Set up email headers.
+							$admin_email = get_option( 'admin_email' );
+							
+							// Get email settings.
+							$email_settings = content_audit_get_email_settings();
+							$from_email = $email_settings['from_email'];
+							$from_name = $email_settings['from_name'];
+							
+							$headers = 'From: ' . $from_name . ' <' . $from_email . '>' . "\r\n" .
+								'Reply-To: ' . $email_settings['notification_email'] . "\r\n" .
 								'Content-Type: text/html; charset=UTF-8';
 
 							// Email template with form URL.
