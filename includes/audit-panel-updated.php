@@ -22,10 +22,10 @@ function content_audit_display_table() {
 
 	// Get filter value from URL parameter, default to 30days.
 	$filter = isset( $_GET['filter'] ) ? sanitize_text_field( wp_unslash( $_GET['filter'] ) ) : '30days';
-	
+
 	// Get content type from URL parameter, default to pages.
 	$content_type = isset( $_GET['content_type'] ) ? sanitize_text_field( wp_unslash( $_GET['content_type'] ) ) : 'pages';
-	
+
 	// Ensure content_type is valid.
 	if ( ! in_array( $content_type, array( 'pages', 'posts' ), true ) ) {
 		$content_type = 'pages';
@@ -34,10 +34,34 @@ function content_audit_display_table() {
 	// Add tabs for switching between pages and posts.
 	?>
 	<div class="nav-tab-wrapper">
-		<a href="<?php echo esc_url( add_query_arg( array( 'page' => 'content-audit', 'content_type' => 'pages', 'filter' => $filter ) ) ); ?>" class="nav-tab <?php echo 'pages' === $content_type ? 'nav-tab-active' : ''; ?>">
+		<a href="
+		<?php
+		echo esc_url(
+			add_query_arg(
+				array(
+					'page'         => 'content-audit',
+					'content_type' => 'pages',
+					'filter'       => $filter,
+				)
+			)
+		);
+		?>
+					" class="nav-tab <?php echo 'pages' === $content_type ? 'nav-tab-active' : ''; ?>">
 			<?php esc_html_e( 'Pages', 'content-audit' ); ?>
 		</a>
-		<a href="<?php echo esc_url( add_query_arg( array( 'page' => 'content-audit', 'content_type' => 'posts', 'filter' => $filter ) ) ); ?>" class="nav-tab <?php echo 'posts' === $content_type ? 'nav-tab-active' : ''; ?>">
+		<a href="
+		<?php
+		echo esc_url(
+			add_query_arg(
+				array(
+					'page'         => 'content-audit',
+					'content_type' => 'posts',
+					'filter'       => $filter,
+				)
+			)
+		);
+		?>
+					" class="nav-tab <?php echo 'posts' === $content_type ? 'nav-tab-active' : ''; ?>">
 			<?php esc_html_e( 'Posts', 'content-audit' ); ?>
 		</a>
 	</div>
@@ -222,7 +246,7 @@ function content_audit_display_table() {
 
 	// Query arguments.
 	$args = array(
-		'post_type'      => $content_type === 'posts' ? 'post' : 'page',
+		'post_type'      => 'post' === $content_type ? 'post' : 'page',
 		'post_status'    => 'publish',
 		'posts_per_page' => $posts_per_page,
 		'meta_query'     => $meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
@@ -286,16 +310,25 @@ function content_audit_display_table() {
 					if ( isset( $_POST['send_email_nonce'] ) ) {
 						$nonce = sanitize_text_field( wp_unslash( $_POST['send_email_nonce'] ) );
 						if ( isset( $_POST[ "$unique_id" ] ) && null !== $nonce && wp_verify_nonce( $nonce, 'send_email_nonce' ) ) {
-							$to      = $stakeholder_email;
-							$subject = 'The following ' . ($content_type === 'posts' ? 'post' : 'page') . ' requires your attention: ' . get_the_title();
+							$to = $stakeholder_email;
+
+							// Use proper translation strings for different content types.
+							if ( 'post' === $content_type ) {
+								/* translators: %s: post title */
+								$subject = sprintf( esc_html__( 'The following post requires your attention: %s', 'content-audit' ), get_the_title() );
+							} else {
+								/* translators: %s: page title */
+								$subject = sprintf( esc_html__( 'The following page requires your attention: %s', 'content-audit' ), get_the_title() );
+							}
+
 							// Set up email headers.
 							$admin_email = get_option( 'admin_email' );
-							
+
 							// Get email settings.
 							$email_settings = content_audit_get_email_settings();
-							$from_email = $email_settings['from_email'];
-							$from_name = $email_settings['from_name'];
-							
+							$from_email     = $email_settings['from_email'];
+							$from_name      = $email_settings['from_name'];
+
 							$headers = 'From: ' . $from_name . ' <' . $from_email . '>' . "\r\n" .
 								'Reply-To: ' . $email_settings['notification_email'] . "\r\n" .
 								'Content-Type: text/html; charset=UTF-8';
@@ -331,7 +364,11 @@ function content_audit_display_table() {
 		endwhile;
 
 	else :
-		echo '<tr><td colspan="6">' . esc_html__( 'No ' . ($content_type === 'posts' ? 'posts' : 'pages') . ' found matching the selected criteria.', 'content-audit' ) . '</td></tr>';
+		if ( 'posts' === $content_type ) {
+			echo '<tr><td colspan="6">' . esc_html__( 'No posts found matching the selected criteria.', 'content-audit' ) . '</td></tr>';
+		} else {
+			echo '<tr><td colspan="6">' . esc_html__( 'No pages found matching the selected criteria.', 'content-audit' ) . '</td></tr>';
+		}
 	endif;
 
 	wp_reset_postdata();

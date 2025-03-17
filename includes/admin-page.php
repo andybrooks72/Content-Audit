@@ -45,7 +45,7 @@ function content_audit_render_admin_page() {
 		<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
 		<p><?php esc_html_e( 'Track and manage content review dates for your pages and posts.', 'content-audit' ); ?></p>
 		
-		<div id="content-audit-panel" style="padding: 10px 10px 20px 10px; background-color: #fff; margin-top: 20px;">
+		<div id="content-audit-panel">
 			<?php
 			// Call the function that contains the content audit table.
 			content_audit_display_table();

@@ -11,92 +11,6 @@ if ( ! defined( 'WPINC' ) ) {
 }
 
 /**
- * Create the submissions table if it doesn't exist.
- *
- * @return void
- */
-function content_audit_create_submissions_table() {
-	global $wpdb;
-	$table_name = $wpdb->prefix . 'content_audit_submissions';
-	$charset_collate = $wpdb->get_charset_collate();
-
-	// Check if table exists.
-	$table_exists = $wpdb->get_var(
-		$wpdb->prepare(
-			'SHOW TABLES LIKE %s',
-			$wpdb->esc_like( $table_name )
-		)
-	) !== null;
-
-	// If table doesn't exist, create it.
-	if ( ! $table_exists ) {
-		$sql = "CREATE TABLE $table_name (
-			id mediumint(9) NOT NULL AUTO_INCREMENT,
-			content_id bigint(20) NOT NULL,
-			content_title varchar(255) NOT NULL,
-			content_type varchar(20) NOT NULL DEFAULT 'page',
-			stakeholder_name varchar(100) NOT NULL,
-			stakeholder_email varchar(100) NOT NULL,
-			stakeholder_department varchar(100) NOT NULL,
-			submission_date datetime NOT NULL,
-			needs_changes tinyint(1) NOT NULL DEFAULT 0,
-			support_ticket_url varchar(255) DEFAULT '',
-			next_review_date datetime NOT NULL,
-			PRIMARY KEY  (id)
-		) $charset_collate;";
-
-		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-		dbDelta( $sql );
-	} else {
-		// Check if the content_type column exists, add it if it doesn't.
-		$column_exists = $wpdb->get_results( "SHOW COLUMNS FROM $table_name LIKE 'content_type'" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-		if ( empty( $column_exists ) ) {
-			$wpdb->query( "ALTER TABLE $table_name ADD COLUMN content_type varchar(20) NOT NULL DEFAULT 'page' AFTER page_title" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-		}
-
-		// Check if the content_id column exists, add it if it doesn't.
-		$column_exists = $wpdb->get_results( "SHOW COLUMNS FROM $table_name LIKE 'content_id'" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-		if ( empty( $column_exists ) ) {
-			// Create a temporary table with the new structure
-			$temp_table_name = $table_name . '_temp';
-			
-			// Drop the temporary table if it exists
-			$wpdb->query( "DROP TABLE IF EXISTS $temp_table_name" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-			
-			// Create the temporary table with the new structure
-			$sql = "CREATE TABLE $temp_table_name (
-				id mediumint(9) NOT NULL AUTO_INCREMENT,
-				content_id bigint(20) NOT NULL,
-				content_title varchar(255) NOT NULL,
-				content_type varchar(20) NOT NULL DEFAULT 'page',
-				stakeholder_name varchar(100) NOT NULL,
-				stakeholder_email varchar(100) NOT NULL,
-				stakeholder_department varchar(100) NOT NULL,
-				submission_date datetime NOT NULL,
-				needs_changes tinyint(1) NOT NULL DEFAULT 0,
-				support_ticket_url varchar(255) DEFAULT '',
-				next_review_date datetime NOT NULL,
-				PRIMARY KEY  (id)
-			) $charset_collate;";
-			
-			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-			dbDelta( $sql );
-			
-			// Copy data from the old table to the new one
-			$wpdb->query( "INSERT INTO $temp_table_name (id, content_id, content_title, content_type, stakeholder_name, stakeholder_email, stakeholder_department, submission_date, needs_changes, support_ticket_url, next_review_date) 
-			               SELECT id, page_id, page_title, content_type, stakeholder_name, stakeholder_email, stakeholder_department, submission_date, needs_changes, support_ticket_url, next_review_date 
-			               FROM $table_name" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-			
-			// Drop the old table
-			$wpdb->query( "DROP TABLE $table_name" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-			
-			// Rename the temporary table to the original name
-			$wpdb->query( "RENAME TABLE $temp_table_name TO $table_name" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-		}
-	}
-}
-
-/**
  * Insert submission into the database.
  *
  * @param array $data Submission data.
@@ -106,11 +20,11 @@ function content_audit_insert_submission( $data ) {
 	global $wpdb;
 	$table_name = $wpdb->prefix . 'content_audit_submissions';
 
-	// Check if the table has the new column structure
+	// Check if the table has the new column structure.
 	$has_content_id = $wpdb->get_var( "SHOW COLUMNS FROM $table_name LIKE 'content_id'" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 
 	if ( $has_content_id ) {
-		// New column structure exists, use content_id and content_title
+		// New column structure exists, use content_id and content_title.
 		return $wpdb->insert(
 			$table_name,
 			array(
@@ -139,7 +53,7 @@ function content_audit_insert_submission( $data ) {
 			)
 		);
 	} else {
-		// Old column structure, use page_id and page_title
+		// Old column structure, use page_id and page_title.
 		return $wpdb->insert(
 			$table_name,
 			array(
@@ -216,9 +130,9 @@ function content_audit_form_shortcode( $atts ) {
 	}
 
 	// Verify token.
-	$content_id        = absint( $atts['content_id'] );
-	$token             = sanitize_text_field( $atts['token'] );
-	$expected_token    = wp_hash( 'content_audit_' . $content_id . get_the_title( $content_id ) );
+	$content_id     = absint( $atts['content_id'] );
+	$token          = sanitize_text_field( $atts['token'] );
+	$expected_token = wp_hash( 'content_audit_' . $content_id . get_the_title( $content_id ) );
 
 	if ( $token !== $expected_token ) {
 		return '<p>' . esc_html__( 'Invalid or expired form link.', 'content-audit' ) . '</p>';
@@ -255,9 +169,6 @@ function content_audit_form_shortcode( $atts ) {
 		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['content_audit_nonce'] ) ), 'content_audit_form_' . $content_id ) ) {
 			$form_errors[] = esc_html__( 'Security verification failed. Please try again.', 'content-audit' );
 		} else {
-			// Check if the submissions table exists and create it if it doesn't.
-			content_audit_create_submissions_table();
-
 			// Process form data.
 			$needs_changes      = isset( $_POST['needs_changes'] ) && '1' === $_POST['needs_changes'] ? 1 : 0;
 			$support_ticket_url = '';
@@ -275,7 +186,7 @@ function content_audit_form_shortcode( $atts ) {
 				$support_ticket_url = esc_url_raw( $raw_url );
 
 				// Verify that we still have a valid URL after sanitization.
-				if ( empty( $support_ticket_url ) || $support_ticket_url === 'https://' ) {
+				if ( empty( $support_ticket_url ) || 'https://' === $support_ticket_url ) {
 					$support_ticket_url = '';
 				}
 			}
@@ -301,9 +212,9 @@ function content_audit_form_shortcode( $atts ) {
 
 			if ( false !== $result ) {
 				$form_submitted = true;
-				
+
 				// Get the success message from settings.
-				$form_settings = content_audit_get_form_settings();
+				$form_settings   = content_audit_get_form_settings();
 				$success_message = $form_settings['success_message'];
 
 				// Update ACF fields.
@@ -640,10 +551,10 @@ function content_audit_form_shortcode( $atts ) {
 				"; // phpcs:enable
 
 				// Get email settings.
-				$email_settings = content_audit_get_email_settings();
+				$email_settings     = content_audit_get_email_settings();
 				$notification_email = $email_settings['notification_email'];
-				$from_email = $email_settings['from_email'];
-				$from_name = $email_settings['from_name'];
+				$from_email         = $email_settings['from_email'];
+				$from_name          = $email_settings['from_name'];
 
 				// Set up email headers for HTML.
 				$headers = array(
@@ -879,7 +790,7 @@ function content_audit_form_shortcode( $atts ) {
 			
 			<div class="content-audit-page-info">
 				<h3>
-					<?php 
+					<?php
 					// Display different heading based on content type.
 					if ( 'page' === $content_type ) {
 						echo esc_html__( 'Page Information', 'content-audit' );
@@ -893,7 +804,7 @@ function content_audit_form_shortcode( $atts ) {
 					<div>
 						<p>
 							<strong>
-								<?php 
+								<?php
 								// Display different label based on content type.
 								if ( 'page' === $content_type ) {
 									echo esc_html__( 'Page Title:', 'content-audit' );
@@ -944,7 +855,7 @@ function content_audit_form_shortcode( $atts ) {
 				<div class="form-field">
 					<fieldset>
 						<legend>
-							<?php 
+							<?php
 							// Display different label based on content type.
 							if ( 'page' === $content_type ) {
 								echo esc_html__( 'Page Review Status:', 'content-audit' );
