@@ -41,6 +41,35 @@ function content_audit_init() {
 add_action( 'plugins_loaded', 'content_audit_init' );
 
 /**
+ * Enqueue frontend scripts and styles.
+ *
+ * @return void
+ */
+function content_audit_enqueue_frontend_assets() {
+	// Only enqueue on pages that have the content audit shortcode.
+	global $post;
+	if ( is_a( $post, 'WP_Post' ) && has_shortcode( $post->post_content, 'content_audit_form' ) ) {
+		// Enqueue the CSS file.
+		wp_enqueue_style(
+			'content-audit-frontend-styles',
+			CONTENT_AUDIT_PLUGIN_URL . 'assets/css/frontend-styles.css',
+			array(),
+			CONTENT_AUDIT_VERSION
+		);
+
+		// Enqueue the JS file.
+		wp_enqueue_script(
+			'content-audit-frontend-scripts',
+			CONTENT_AUDIT_PLUGIN_URL . 'assets/js/frontend-scripts.js',
+			array(),
+			CONTENT_AUDIT_VERSION,
+			true
+		);
+	}
+}
+add_action( 'wp_enqueue_scripts', 'content_audit_enqueue_frontend_assets' );
+
+/**
  * Add plugin action links.
  *
  * @param array $links Array of plugin action links.

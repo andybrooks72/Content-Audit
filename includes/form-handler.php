@@ -21,7 +21,19 @@ function content_audit_insert_submission( $data ) {
 	$table_name = $wpdb->prefix . 'content_audit_submissions';
 
 	// Check if the table has the new column structure.
-	$has_content_id = $wpdb->get_var( "SHOW COLUMNS FROM $table_name LIKE 'content_id'" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+	$cache_key    = 'content_audit_has_content_id_column';
+	$has_content_id = wp_cache_get( $cache_key );
+	
+	if ( false === $has_content_id ) {
+		$has_content_id = $wpdb->get_var(
+			$wpdb->prepare(
+				'SHOW COLUMNS FROM %s LIKE %s',
+				$table_name,
+				'content_id'
+			)
+		); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		wp_cache_set( $cache_key, $has_content_id );
+	}
 
 	if ( $has_content_id ) {
 		// New column structure exists, use content_id and content_title.
@@ -115,7 +127,7 @@ function content_audit_form_shortcode( $atts ) {
 		// If this is the form page created by the plugin, show a helpful message.
 		$form_page_id = get_option( 'content_audit_form_page_id' );
 		if ( $form_page_id && get_the_ID() === (int) $form_page_id ) {
-			return '<div class="content-audit-form-message" style="background-color: #f8f8f8; border: 1px solid #ddd; padding: 20px; margin: 20px 0; border-radius: 5px;">
+			return '<div class="content-audit-form-message">
 				<h2>' . esc_html__( 'Content Review Form', 'content-audit' ) . '</h2>
 				<p>' . esc_html__( 'This form is designed to be accessed from the link provided in content review emails.', 'content-audit' ) . '</p>
 				<p>' . esc_html__( 'If you received an email about reviewing content, please use the link in that email to access this form with the correct parameters.', 'content-audit' ) . '</p>
@@ -123,7 +135,7 @@ function content_audit_form_shortcode( $atts ) {
 			</div>';
 		} else {
 			// For other pages using the shortcode directly.
-			return '<div class="content-audit-form-error" style="background-color: #fff8f8; border: 1px solid #ffdddd; padding: 15px; margin: 10px 0; border-radius: 4px;">
+			return '<div class="content-audit-form-error">
 				<p>' . esc_html__( 'Invalid form parameters. This form must be accessed from the link provided in the content review email.', 'content-audit' ) . '</p>
 			</div>';
 		}
@@ -175,14 +187,13 @@ function content_audit_form_shortcode( $atts ) {
 
 			// Process and sanitize the support ticket URL.
 			if ( isset( $_POST['support_ticket_url'] ) && ! empty( $_POST['support_ticket_url'] ) ) {
-				$raw_url = wp_unslash( $_POST['support_ticket_url'] );
+				$raw_url = sanitize_text_field( wp_unslash( $_POST['support_ticket_url'] ) );
 
-				// Add https:// if no protocol is specified.
-				if ( ! preg_match( '~^(?:f|ht)tps?://~i', $raw_url ) ) {
-					$raw_url = 'https://' . $raw_url;
+				// Ensure URL starts with https://.
+				if ( strpos( $raw_url, 'https://' ) !== 0 && strpos( $raw_url, 'http://' ) !== 0 ) {
+					$raw_url = 'https://' . trim( $raw_url );
 				}
 
-				// Use esc_url_raw to sanitize but preserve the URL functionality.
 				$support_ticket_url = esc_url_raw( $raw_url );
 
 				// Verify that we still have a valid URL after sanitization.
@@ -438,7 +449,7 @@ function content_audit_form_shortcode( $atts ) {
 						<!-- Preview Text Spacing Hack : BEGIN -->
 						<div
 							style='display: none; font-size: 1px; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden; mso-hide: all; font-family: sans-serif;'>
-							&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;
+							&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;
 						</div>
 						<!-- Preview Text Spacing Hack : END -->
 
@@ -588,200 +599,6 @@ function content_audit_form_shortcode( $atts ) {
 		}
 
 		?>
-		<style>
-			.content-audit-form-wrapper {
-				max-width: 800px;
-				margin: 40px auto;
-				background-color: #fff;
-				border-radius: 8px;
-				box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-				padding: 30px;
-				font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-			}
-			.content-audit-header {
-				border-bottom: 1px solid #eee;
-				margin-bottom: 25px;
-				padding-bottom: 15px;
-			}
-			.content-audit-header h2 {
-				color: #333;
-				margin-top: 0;
-				margin-bottom: 10px;
-				font-size: 24px;
-				font-weight: 600;
-			}
-			.content-audit-header p {
-				color: #666;
-				margin-bottom: 0;
-				font-size: 16px;
-			}
-			.content-audit-page-info {
-				background-color: #f9f9f9;
-				border-radius: 6px;
-				padding: 20px;
-				margin-bottom: 25px;
-			}
-			.content-audit-page-info h3 {
-				color: #333;
-				margin-top: 0;
-				margin-bottom: 15px;
-				font-size: 18px;
-				font-weight: 600;
-			}
-			.content-audit-grid {
-				display: grid;
-				grid-template-columns: 1fr 1fr;
-				gap: 15px;
-			}
-			.content-audit-grid p {
-				margin: 0 0 10px;
-				font-size: 15px;
-			}
-			.content-audit-grid strong {
-				color: #555;
-				display: block;
-				margin-bottom: 4px;
-			}
-			.content-audit-grid span, 
-			.content-audit-grid a {
-				color: #333;
-				font-size: 15px;
-			}
-			.content-audit-grid a {
-				color: #d9042b;
-				text-decoration: none;
-				word-break: break-all;
-			}
-			.content-audit-stakeholder {
-				margin: 10px 0 0;
-				font-size: 15px;
-			}
-			.content-audit-stakeholder strong {
-				color: #555;
-				display: inline;
-				margin-right: 5px;
-			}
-			.content-audit-stakeholder span {
-				color: #333;
-				font-size: 15px;
-			}
-			.content-audit-form .form-field {
-				margin-bottom: 25px;
-			}
-			.content-audit-form fieldset {
-				border: none;
-				padding: 0;
-				margin: 0;
-			}
-			.content-audit-form legend {
-				font-weight: 600;
-				color: #333;
-				margin-bottom: 12px;
-				font-size: 16px;
-				display: block;
-			}
-			.content-audit-radio-options {
-				display: flex;
-				gap: 20px;
-				flex-wrap: wrap;
-			}
-			.content-audit-radio-label {
-				display: flex;
-				align-items: center;
-				background-color: #f1f8f1;
-				border: 1px solid #ddd;
-				border-radius: 6px;
-				padding: 15px;
-				cursor: pointer;
-				flex: 1;
-				min-width: 200px;
-			}
-			.content-audit-radio-label.needs-changes {
-				background-color: #fff8f8;
-			}
-			.content-audit-radio-label input[type="radio"] {
-				margin-right: 10px;
-			}
-			.content-audit-radio-label span {
-				font-size: 15px;
-				color: #333;
-			}
-			#support_ticket_field {
-				display: none;
-				margin-bottom: 25px;
-				background-color: #fff8f8;
-				border-radius: 6px;
-				padding: 20px;
-				border: 1px solid #ffdddd;
-			}
-			#support_ticket_field label {
-				display: block;
-				margin-bottom: 10px;
-				font-weight: 600;
-				color: #333;
-				font-size: 15px;
-			}
-			#support_ticket_field input[type="url"] {
-				width: 100%;
-				padding: 10px;
-				border: 1px solid #ddd;
-				border-radius: 4px;
-				font-size: 15px;
-			}
-			#support_ticket_field .description {
-				margin-top: 8px;
-				color: #666;
-				font-size: 13px;
-			}
-			.content-audit-submit {
-				margin-top: 30px;
-			}
-			.content-audit-submit input[type="submit"] {
-				background-color: #d9042b;
-				border-color: #d9042b;
-				color: #fff;
-				padding: 10px 20px;
-				font-size: 16px;
-				border-radius: 4px;
-				cursor: pointer;
-				border: none;
-				font-weight: 500;
-				transition: all 0.2s ease;
-			}
-			.content-audit-errors {
-				background-color: #ffeeee;
-				border-left: 4px solid #d9042b;
-				padding: 15px 20px;
-				margin-bottom: 25px;
-				border-radius: 4px;
-				box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-			}
-			.content-audit-errors p {
-				margin: 0;
-				color: #d9042b;
-				font-size: 15px;
-			}
-			.content-audit-success {
-				max-width: 800px;
-				margin: 40px auto;
-				background-color: #f1f8f1;
-				border-left: 4px solid #46b450;
-				padding: 25px;
-				border-radius: 4px;
-				box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-			}
-			.content-audit-success h2 {
-				margin-top: 0;
-				color: #333;
-				font-size: 20px;
-			}
-			.content-audit-success p {
-				margin-bottom: 0;
-				font-size: 16px;
-				color: #333;
-			}
-		</style>
-
 		<div class="content-audit-form-wrapper">
 			<div class="content-audit-header">
 				<h2><?php echo esc_html__( 'Content Review Form', 'content-audit' ); ?></h2>
@@ -889,46 +706,6 @@ function content_audit_form_shortcode( $atts ) {
 					<input type="submit" name="content_audit_submit" class="button button-primary" value="<?php echo esc_attr__( 'Submit Review', 'content-audit' ); ?>" />
 				</div>
 			</form>
-			
-			<script>
-				document.addEventListener('DOMContentLoaded', function() {
-					const needsChangesYes = document.getElementById('needs_changes_yes');
-					const needsChangesNo = document.getElementById('needs_changes_no');
-					const supportTicketField = document.getElementById('support_ticket_field');
-					const submitButton = document.querySelector('input[name="content_audit_submit"]');
-					
-					// Function to toggle support ticket field visibility
-					function toggleSupportTicketField() {
-						if (needsChangesYes.checked) {
-							supportTicketField.style.display = 'block';
-						} else {
-							supportTicketField.style.display = 'none';
-							document.getElementById('support_ticket_url').value = '';
-						}
-					}
-					
-					// Add event listeners
-					needsChangesYes.addEventListener('change', toggleSupportTicketField);
-					needsChangesNo.addEventListener('change', toggleSupportTicketField);
-					
-					// Add focus styles to form elements
-					const formInputs = document.querySelectorAll('input[type="url"], input[type="text"]');
-					formInputs.forEach(input => {
-						input.addEventListener('focus', function() {
-							this.style.borderColor = '#d9042b';
-							this.style.boxShadow = '0 0 0 1px #d9042b';
-							this.style.outline = 'none';
-						});
-						input.addEventListener('blur', function() {
-							this.style.borderColor = '#ddd';
-							this.style.boxShadow = 'none';
-						});
-					});
-					
-					// Initial state
-					toggleSupportTicketField();
-				});
-			</script>
 		</div>
 		<?php
 	}
