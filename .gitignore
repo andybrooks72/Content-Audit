@@ -22,7 +22,6 @@ package-lock.json
 yarn.lock
 
 # Composer packages
-/vendor/
 composer.lock
 
 # WordPress testing
