@@ -113,6 +113,11 @@ function content_audit_activate() {
 }
 register_activation_hook( __FILE__, 'content_audit_activate' );
 
+// Add dependancy for ACF field creation.
+require_once CONTENT_AUDIT_PLUGIN_DIR . 'vendor/autoload.php';
+require_once CONTENT_AUDIT_PLUGIN_DIR . 'includes/class-acfauditfields.php';
+ContentAudit\ACFAuditFields::initialise();
+
 /**
  * Check and update database tables when plugin is loaded.
  * This ensures tables exist even if the activation hook wasn't triggered.
