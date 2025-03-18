@@ -246,7 +246,7 @@ function content_audit_display_table() {
 
 	// Query arguments.
 	$args = array(
-		'post_type'      => 'post' === $content_type ? 'post' : 'page',
+		'post_type'      => 'posts' === $content_type ? 'post' : 'page',
 		'post_status'    => 'publish',
 		'posts_per_page' => $posts_per_page,
 		'meta_query'     => $meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
@@ -313,7 +313,7 @@ function content_audit_display_table() {
 							$to = $stakeholder_email;
 
 							// Use proper translation strings for different content types.
-							if ( 'post' === $content_type ) {
+							if ( 'posts' === $content_type ) {
 								/* translators: %s: post title */
 								$subject = sprintf( esc_html__( 'The following post requires your attention: %s', 'content-audit' ), get_the_title() );
 							} else {

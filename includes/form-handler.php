@@ -21,9 +21,9 @@ function content_audit_insert_submission( $data ) {
 	$table_name = $wpdb->prefix . 'content_audit_submissions';
 
 	// Check if the table has the new column structure.
-	$cache_key    = 'content_audit_has_content_id_column';
+	$cache_key      = 'content_audit_has_content_id_column';
 	$has_content_id = wp_cache_get( $cache_key );
-	
+
 	if ( false === $has_content_id ) {
 		$has_content_id = $wpdb->get_var(
 			$wpdb->prepare(
@@ -497,11 +497,11 @@ function content_audit_form_shortcode( $atts ) {
 															<th style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; background-color: #f9f9f9; font-weight: 600; font-family: sans-serif; font-size: 15px; line-height: 20px;'>Page</th>
 															<td style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 15px; line-height: 20px;'><a href='";
 				
-				// Get the relative path from the permalink
+				// Get the relative path from the permalink.
 				$permalink = get_permalink( $content_id );
 				$site_url  = site_url();
 				$relative_path = str_replace( $site_url, '', $permalink );
-				// Create the live site URL
+				// Create the live site URL.
 				$live_site_url = 'https://www.pepper.money' . $relative_path;
 				
 				$message .= esc_url( $live_site_url ) . "'>" . esc_html( get_the_title( $content_id ) ) . "</a></td>

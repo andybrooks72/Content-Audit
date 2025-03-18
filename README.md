@@ -18,6 +18,8 @@ The Content Audit plugin helps you track and manage content review dates for you
 ## Requirements
 - WordPress 5.0 or higher
 - PHP 7.2 or higher
+- Advanced Custom Fields (ACF) Pro plugin
+- StoutLogic ACF Builder (included in the plugin)
 
 ## Usage
 
@@ -69,6 +71,50 @@ The form includes:
 4. Click on a submission to view details
 
 ## Advanced Configuration
+
+### Adding Support for Additional Post Types
+
+The plugin uses StoutLogic ACF Builder to create and manage the custom fields. By default, the plugin adds the audit fields to Pages and Posts, but you can easily extend it to support other post types.
+
+To add support for additional post types:
+
+1. Open the file `includes/class-acfauditfields.php`
+2. Locate the `audit_fields` method
+3. Find the `setLocation` method call and add your custom post type:
+
+```php
+$audit_fields->setLocation( 'post_type', '==', 'page' )
+    ->or( 'post_type', '==', 'post' )
+    ->or( 'post_type', '==', 'your_custom_post_type' ); // Add your custom post type here
+```
+
+4. Save the file and the audit fields will now appear on your custom post type edit screens
+
+### Using StoutLogic ACF Builder
+
+This plugin uses the StoutLogic ACF Builder library to programmatically create ACF field groups. This approach offers several advantages:
+
+- Field definitions are version-controlled
+- Fields can be easily modified through code
+- No need to manually create fields through the ACF interface
+- Consistent field creation across different environments
+
+The ACF Builder is initialized in the `class-acfauditfields.php` file. To modify existing fields or add new ones:
+
+1. Locate the `audit_fields` method in `class-acfauditfields.php`
+2. Use the ACF Builder methods to add or modify fields:
+
+```php
+$audit_fields->addText(
+    'field_name',
+    array(
+        'label' => __( 'Field Label', 'ContentAudit' ),
+        // Add other field settings here
+    )
+);
+```
+
+For more information on using ACF Builder, refer to the [StoutLogic ACF Builder documentation](https://github.com/StoutLogic/acf-builder).
 
 ### Email Templates
 The plugin uses HTML email templates that can be customized through WordPress filters:
