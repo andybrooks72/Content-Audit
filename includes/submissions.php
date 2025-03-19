@@ -25,7 +25,7 @@ function content_audit_render_submissions_page() {
 	$table_name = $wpdb->prefix . 'content_audit_submissions';
 
 	// Handle CSV export if requested.
-	if ( isset( $_GET['export_csv'] ) && '1' === $_GET['export_csv'] ) {
+	if ( isset( $_POST['export_csv'] ) && '1' === $_POST['export_csv'] ) {
 		content_audit_export_submissions_csv( $table_name );
 		exit; // Ensure no further output.
 	}
@@ -106,9 +106,11 @@ function content_audit_render_submissions_page() {
 						<?php endif; ?>
 					</form>
 					
-					<a href="<?php echo esc_url( add_query_arg( 'export_csv', '1' ) ); ?>" class="button button-primary">
-						<?php esc_html_e( 'Export to CSV', 'content-audit' ); ?>
-					</a>
+					<form method="post" action="" class="content-audit-export-form" style="display: inline-block;">
+						<button type="submit" class="button button-primary">
+							<?php esc_html_e( 'Export to CSV', 'content-audit' ); ?>
+						</button>
+					</form>
 				</div>
 				<br class="clear">
 			</div>
@@ -127,7 +129,6 @@ function content_audit_render_submissions_page() {
 							<th><?php esc_html_e( 'Submission Date', 'content-audit' ); ?></th>
 							<th><?php esc_html_e( 'Needs Changes', 'content-audit' ); ?></th>
 							<th><?php esc_html_e( 'Support Ticket', 'content-audit' ); ?></th>
-							<th><?php esc_html_e( 'Next Review', 'content-audit' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -188,12 +189,6 @@ function content_audit_render_submissions_page() {
 									} else {
 										echo '—';
 									}
-									?>
-								</td>
-								<td>
-									<?php
-									$next_review = new DateTime( $submission['next_review_date'] );
-									echo esc_html( $next_review->format( 'F d, Y' ) );
 									?>
 								</td>
 							</tr>
@@ -286,7 +281,185 @@ function content_audit_render_submissions_page() {
 }
 
 /**
- * Export submissions data to a CSV file.
+ * Register AJAX handlers for CSV export.
+ */
+function content_audit_register_ajax_handlers() {
+	add_action('wp_ajax_content_audit_export_csv', 'content_audit_ajax_export_csv');
+}
+add_action('admin_init', 'content_audit_register_ajax_handlers');
+
+/**
+ * AJAX handler for CSV export.
+ */
+function content_audit_ajax_export_csv() {
+	// Check nonce for security.
+	check_ajax_referer('content_audit_csv_nonce', 'nonce');
+	
+	// Check user capabilities.
+	if (!current_user_can('manage_options')) {
+		wp_die('Unauthorized access');
+	}
+	
+	global $wpdb;
+	$table_name = $wpdb->prefix . 'content_audit_submissions';
+	
+	// Check if the table exists before querying.
+	if ($table_name !== $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name))) { // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		wp_die('Table does not exist');
+	}
+	
+	// Process filter parameters if set.
+	$where_clause = '';
+	$filter_stakeholder = isset($_POST['filter_stakeholder']) ? sanitize_text_field(wp_unslash($_POST['filter_stakeholder'])) : '';
+	$content_type = isset($_POST['content_type']) ? sanitize_text_field(wp_unslash($_POST['content_type'])) : '';
+	
+	// Add stakeholder filter if provided.
+	if (!empty($filter_stakeholder)) {
+		$where_clause = $wpdb->prepare(' WHERE stakeholder_name LIKE %s', '%' . $wpdb->esc_like($filter_stakeholder) . '%'); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+	}
+	
+	// Add content type filter if provided.
+	if (!empty($content_type) && in_array($content_type, array('page', 'post'), true)) {
+		if (empty($where_clause)) {
+			$where_clause = $wpdb->prepare(' WHERE content_type = %s', $content_type); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		} else {
+			$where_clause .= $wpdb->prepare(' AND content_type = %s', $content_type); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		}
+	}
+	
+	// Get submissions from the database.
+	$submissions = $wpdb->get_results(
+		"SELECT * FROM $table_name" . $where_clause . ' ORDER BY submission_date DESC', // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		ARRAY_A
+	);
+	
+	if (empty($submissions)) {
+		wp_die('No submissions found');
+	}
+	
+	// Clear any previous output.
+	if (ob_get_length()) {
+		ob_clean();
+	}
+	
+	// Set headers for CSV download.
+	header('Content-Type: text/csv');
+	header('Content-Disposition: attachment; filename="content-audit-submissions-' . gmdate('Y-m-d') . '.csv"');
+	header('Expires: 0');
+	header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+	header('Pragma: public');
+	
+	// Create a file pointer connected to the output stream.
+	$output = fopen('php://output', 'w');
+	
+	// Add UTF-8 BOM for Excel compatibility.
+	fputs($output, "\xEF\xBB\xBF");
+	
+	// Set up the column headers.
+	$headers = array(
+		'ID',
+		'Content Title',
+		'Content URL',
+		'Content Type',
+		'Stakeholder',
+		'Department',
+		'Submission Date',
+		'Needs Changes',
+		'Support Ticket',
+	);
+	
+	// Output the column headers.
+	fputcsv($output, $headers);
+	
+	// Output each row of data.
+	foreach ($submissions as $submission) {
+		// Format dates for better readability.
+		$submission_date = new DateTime($submission['submission_date']);
+		
+		// Handle the next_review_date format
+		$next_review_date = $submission['next_review_date'];
+		$next_review_formatted = '';
+		
+		// Check if the date is already in a formatted string
+		if (strtotime($next_review_date) === false) {
+			// If we can't parse it directly, use it as is
+			$next_review_formatted = $next_review_date;
+		} else {
+			// We can parse it, so format it
+			$next_review = new DateTime($next_review_date);
+			$next_review_formatted = $next_review->format('F d, Y');
+		}
+		
+		// Get content ID for permalink.
+		$content_id = isset($submission['content_id']) ? $submission['content_id'] : $submission['page_id'];
+		
+		// Get the content URL.
+		$content_url = '';
+		if (!empty($content_id)) {
+			// Get the relative path from the permalink.
+			$permalink = get_permalink($content_id);
+			if ($permalink) {
+				$site_url = site_url();
+				$relative_path = str_replace($site_url, '', $permalink);
+				// Create the live site URL.
+				$content_url = 'https://www.pepper.money' . $relative_path;
+			}
+		}
+		
+		$row = array(
+			$submission['id'],
+			$submission['content_title'],
+			$content_url,
+			isset($submission['content_type']) ? $submission['content_type'] : 'page',
+			$submission['stakeholder_name'],
+			$submission['stakeholder_department'],
+			$submission_date->format('F d, Y H:i'),
+			$submission['needs_changes'] ? 'Yes' : 'No',
+			empty($submission['support_ticket_url']) ? 'N/A' : $submission['support_ticket_url'],
+		);
+		
+		fputcsv($output, $row);
+	}
+	
+	// Close the file pointer.
+	fclose($output);
+	
+	// Stop execution to prevent any additional output.
+	wp_die();
+}
+
+/**
+ * Enqueue scripts for the submissions page.
+ */
+function content_audit_enqueue_submissions_scripts() {
+	// Only enqueue on the submissions page.
+	$screen = get_current_screen();
+	if (isset($screen->id) && 'content-audit_page_content-audit-submissions' === $screen->id) {
+		wp_enqueue_script(
+			'content-audit-submissions',
+			plugins_url('/assets/js/submissions.js', dirname(__FILE__)),
+			array('jquery'),
+			filemtime(plugin_dir_path(dirname(__FILE__)) . 'assets/js/submissions.js'),
+			true
+		);
+		
+		// Pass data to the script.
+		wp_localize_script(
+			'content-audit-submissions',
+			'contentAuditData',
+			array(
+				'ajaxUrl' => admin_url('admin-ajax.php'),
+				'nonce' => wp_create_nonce('content_audit_csv_nonce'),
+				'filterStakeholder' => isset($_GET['filter_stakeholder']) ? sanitize_text_field(wp_unslash($_GET['filter_stakeholder'])) : '',
+				'contentType' => isset($_GET['content_type']) ? sanitize_text_field(wp_unslash($_GET['content_type'])) : '',
+			)
+		);
+	}
+}
+add_action('admin_enqueue_scripts', 'content_audit_enqueue_submissions_scripts');
+
+/**
+ * Export submissions to CSV.
  *
  * @param string $table_name The database table name.
  * @return void
@@ -301,8 +474,8 @@ function content_audit_export_submissions_csv( $table_name ) {
 
 	// Process filter parameters if set.
 	$where_clause       = '';
-	$filter_stakeholder = isset( $_GET['filter_stakeholder'] ) ? sanitize_text_field( wp_unslash( $_GET['filter_stakeholder'] ) ) : '';
-	$content_type       = isset( $_GET['content_type'] ) ? sanitize_text_field( wp_unslash( $_GET['content_type'] ) ) : '';
+	$filter_stakeholder = isset( $_POST['filter_stakeholder'] ) ? sanitize_text_field( wp_unslash( $_POST['filter_stakeholder'] ) ) : '';
+	$content_type       = isset( $_POST['content_type'] ) ? sanitize_text_field( wp_unslash( $_POST['content_type'] ) ) : '';
 
 	// Add stakeholder filter if provided.
 	if ( ! empty( $filter_stakeholder ) ) {
@@ -328,22 +501,15 @@ function content_audit_export_submissions_csv( $table_name ) {
 		return;
 	}
 
-	// Prevent any output before headers.
-	if ( ob_get_length() ) {
-		ob_clean();
-	}
-
-	// Set headers for CSV download.
-	header( 'Content-Type: text/csv; charset=utf-8' );
-	header( 'Content-Disposition: attachment; filename=content-audit-submissions-' . gmdate( 'Y-m-d' ) . '.csv' );
-	header( 'Pragma: no-cache' );
-	header( 'Expires: 0' );
-
-	// Create a file pointer connected to the output stream.
-	$output = fopen( 'php://output', 'w' );
-
+	// Create a temporary file.
+	$upload_dir = wp_upload_dir();
+	$temp_file = $upload_dir['basedir'] . '/content-audit-submissions-' . gmdate('Y-m-d') . '-' . uniqid() . '.csv';
+	
+	// Open the file for writing.
+	$file = fopen($temp_file, 'w');
+	
 	// Add UTF-8 BOM for Excel compatibility.
-	fputs( $output, "\xEF\xBB\xBF" );
+	fputs($file, "\xEF\xBB\xBF");
 
 	// Set up the column headers.
 	$headers = array(
@@ -356,29 +522,41 @@ function content_audit_export_submissions_csv( $table_name ) {
 		'Submission Date',
 		'Needs Changes',
 		'Support Ticket',
-		'Next Review',
 	);
 
 	// Output the column headers.
-	fputcsv( $output, $headers );
+	fputcsv($file, $headers);
 
 	// Output each row of data.
-	foreach ( $submissions as $submission ) {
+	foreach ($submissions as $submission) {
 		// Format dates for better readability.
-		$submission_date  = new DateTime( $submission['submission_date'] );
-		$next_review_date = new DateTime( $submission['next_review_date'] );
+		$submission_date = new DateTime($submission['submission_date']);
+		
+		// Handle the next_review_date format
+		$next_review_date = $submission['next_review_date'];
+		$next_review_formatted = '';
+		
+		// Check if the date is already in a formatted string
+		if (strtotime($next_review_date) === false) {
+			// If we can't parse it directly, use it as is
+			$next_review_formatted = $next_review_date;
+		} else {
+			// We can parse it, so format it
+			$next_review = new DateTime($next_review_date);
+			$next_review_formatted = $next_review->format('F d, Y');
+		}
 
 		// Get content ID for permalink.
-		$content_id = isset( $submission['content_id'] ) ? $submission['content_id'] : $submission['page_id'];
+		$content_id = isset($submission['content_id']) ? $submission['content_id'] : $submission['page_id'];
 
 		// Get the content URL.
 		$content_url = '';
-		if ( ! empty( $content_id ) ) {
+		if (!empty($content_id)) {
 			// Get the relative path from the permalink.
-			$permalink = get_permalink( $content_id );
-			if ( $permalink ) {
-				$site_url      = site_url();
-				$relative_path = str_replace( $site_url, '', $permalink );
+			$permalink = get_permalink($content_id);
+			if ($permalink) {
+				$site_url = site_url();
+				$relative_path = str_replace($site_url, '', $permalink);
 				// Create the live site URL.
 				$content_url = 'https://www.pepper.money' . $relative_path;
 			}
@@ -388,21 +566,66 @@ function content_audit_export_submissions_csv( $table_name ) {
 			$submission['id'],
 			$submission['content_title'],
 			$content_url,
-			isset( $submission['content_type'] ) ? $submission['content_type'] : 'page',
+			isset($submission['content_type']) ? $submission['content_type'] : 'page',
 			$submission['stakeholder_name'],
 			$submission['stakeholder_department'],
-			$submission_date->format( 'F d, Y H:i' ),
+			$submission_date->format('F d, Y H:i'),
 			$submission['needs_changes'] ? 'Yes' : 'No',
-			empty( $submission['support_ticket_url'] ) ? 'N/A' : $submission['support_ticket_url'],
-			$next_review_date->format( 'F d, Y' ),
+			empty($submission['support_ticket_url']) ? 'N/A' : $submission['support_ticket_url'],
 		);
 
-		fputcsv( $output, $row );
+		fputcsv($file, $row);
 	}
 
-	// Close the file pointer.
-	fclose( $output );
-
-	// Stop execution to prevent any additional output.
+	// Close the file.
+	fclose($file);
+	
+	// Set a transient with the file path for later download.
+	set_transient('content_audit_csv_download', $temp_file, 60 * 5); // 5 minutes expiration
+	
+	// Redirect to the same page with a download parameter.
+	wp_safe_redirect(add_query_arg('download_csv', '1', remove_query_arg('export_csv')));
 	exit;
 }
+
+/**
+ * Handle CSV download from a temporary file.
+ */
+function content_audit_handle_csv_download() {
+	if (isset($_GET['download_csv']) && '1' === $_GET['download_csv']) {
+		// Get the file path from the transient.
+		$file_path = get_transient('content_audit_csv_download');
+		
+		if ($file_path && file_exists($file_path)) {
+			// Get the filename from the path.
+			$filename = basename($file_path);
+			
+			// Set headers for download.
+			header('Content-Description: File Transfer');
+			header('Content-Type: text/csv');
+			header('Content-Disposition: attachment; filename="' . $filename . '"');
+			header('Expires: 0');
+			header('Cache-Control: must-revalidate');
+			header('Pragma: public');
+			header('Content-Length: ' . filesize($file_path));
+			
+			// Clear output buffer.
+			if (ob_get_length()) {
+				ob_clean();
+			}
+			flush();
+			
+			// Read the file and output it to the browser.
+			readfile($file_path);
+			
+			// Delete the temporary file.
+			unlink($file_path);
+			
+			// Delete the transient.
+			delete_transient('content_audit_csv_download');
+			
+			exit;
+		}
+	}
+}
+add_action('admin_init', 'content_audit_handle_csv_download');

@@ -27,8 +27,7 @@ function content_audit_insert_submission( $data ) {
 	if ( false === $has_content_id ) {
 		$has_content_id = $wpdb->get_var(
 			$wpdb->prepare(
-				'SHOW COLUMNS FROM %s LIKE %s',
-				$table_name,
+				"SHOW COLUMNS FROM `{$wpdb->prefix}content_audit_submissions` LIKE %s",
 				'content_id'
 			)
 		); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
@@ -775,12 +774,17 @@ function content_audit_generate_form_url( $content_id ) {
 
 	// Ensure we're using the form page ID and not the content ID for the URL base.
 	$form_page_url = get_permalink( $form_page_id );
+	
+	// Get the content type (post or page)
+	$content_post = get_post($content_id);
+	$content_type = ($content_post && $content_post->post_type === 'post') ? 'post' : 'page';
 
 	// Generate the URL with parameters.
 	$url = add_query_arg(
 		array(
 			'content_page_id' => $content_id,
 			'token'           => $token,
+			'content_type'    => $content_type,
 		),
 		$form_page_url
 	);
@@ -788,7 +792,7 @@ function content_audit_generate_form_url( $content_id ) {
 	// Make sure the URL is properly formed.
 	if ( ! filter_var( $url, FILTER_VALIDATE_URL ) ) {
 		// Fallback to a simpler URL construction if add_query_arg fails.
-		$url = trailingslashit( $form_page_url ) . '?content_page_id=' . rawurlencode( $content_id ) . '&token=' . rawurlencode( $token );
+		$url = trailingslashit( $form_page_url ) . '?content_page_id=' . rawurlencode( $content_id ) . '&token=' . rawurlencode( $token ) . '&content_type=' . rawurlencode( $content_type );
 	}
 
 	return $url;

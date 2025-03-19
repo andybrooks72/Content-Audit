@@ -312,8 +312,12 @@ function content_audit_display_table() {
 						if ( isset( $_POST[ "$unique_id" ] ) && null !== $nonce && wp_verify_nonce( $nonce, 'send_email_nonce' ) ) {
 							$to = $stakeholder_email;
 
+							// Get the actual post type from the database.
+							$post_obj = get_post( $page_id );
+							$actual_post_type = $post_obj ? $post_obj->post_type : 'page';
+
 							// Use proper translation strings for different content types.
-							if ( 'posts' === $content_type ) {
+							if ( 'post' === $actual_post_type ) {
 								/* translators: %s: post title */
 								$subject = sprintf( esc_html__( 'The following post requires your attention: %s', 'content-audit' ), get_the_title() );
 							} else {
@@ -335,6 +339,19 @@ function content_audit_display_table() {
 
 							// Email template with form URL.
 							$message = content_audit_get_email_template( $page_title, $page_url, $date, $format_out, $page_id );
+
+							// Debug information
+							$debug_info = '';
+							if ( current_user_can( 'manage_options' ) ) {
+								$debug_info = '<div style="margin-top: 20px; padding: 10px; background-color: #f8f8f8; border: 1px solid #ddd; font-size: 12px;">';
+								$debug_info .= '<p>Debug Info:</p>';
+								$debug_info .= '<p>Page ID: ' . $page_id . '</p>';
+								$debug_info .= '<p>Content Type: ' . $actual_post_type . '</p>';
+								$debug_info .= '<p>Form URL: ' . content_audit_generate_form_url( $page_id ) . '</p>';
+								$debug_info .= '</div>';
+								
+								$message .= $debug_info;
+							}
 
 							wp_mail( $to, $subject, $message, $headers );
 
