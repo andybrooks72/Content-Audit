@@ -72,7 +72,7 @@ function content_audit_admin_enqueue_scripts( $hook ) {
 	wp_register_style(
 		'content-audit-admin-styles',
 		plugin_dir_url( dirname( __FILE__ ) ) . 'assets/css/admin-styles.css',
-		array(),
+		array('dashicons'),
 		'1.0.1',
 		'all'
 	);

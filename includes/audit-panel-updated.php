@@ -288,8 +288,15 @@ function content_audit_display_table() {
 
 			?>
 			<tr id="page-<?php echo esc_attr( $page_id ); ?>" class="<?php echo $is_overdue ? 'overdue' : ''; ?>">
-				<th scope="row" style="width: 300px;">
+				<th scope="row">
 					<a href="<?php echo esc_url( $page_url ); ?>"><?php echo esc_html( $page_title ); ?></a>
+					<?php
+					// Add edit link for WordPress admin.
+					$edit_link = get_edit_post_link( $page_id );
+					if ( $edit_link ) {
+						echo '<a href="' . esc_url( $edit_link ) . '" class="edit-link" title="' . esc_attr__( 'Edit this content', 'content-audit' ) . '"><span class="dashicons dashicons-edit"></span></a>';
+					}
+					?>
 				</th>
 				<td>
 				<?php echo esc_html( $stakeholder_name ); ?>
@@ -313,7 +320,7 @@ function content_audit_display_table() {
 							$to = $stakeholder_email;
 
 							// Get the actual post type from the database.
-							$post_obj = get_post( $page_id );
+							$post_obj         = get_post( $page_id );
 							$actual_post_type = $post_obj ? $post_obj->post_type : 'page';
 
 							// Use proper translation strings for different content types.
@@ -340,16 +347,16 @@ function content_audit_display_table() {
 							// Email template with form URL.
 							$message = content_audit_get_email_template( $page_title, $page_url, $date, $format_out, $page_id );
 
-							// Debug information
+							// Debug information.
 							$debug_info = '';
 							if ( current_user_can( 'manage_options' ) ) {
-								$debug_info = '<div style="margin-top: 20px; padding: 10px; background-color: #f8f8f8; border: 1px solid #ddd; font-size: 12px;">';
+								$debug_info  = '<div style="margin-top: 20px; padding: 10px; background-color: #f8f8f8; border: 1px solid #ddd; font-size: 12px;">';
 								$debug_info .= '<p>Debug Info:</p>';
 								$debug_info .= '<p>Page ID: ' . $page_id . '</p>';
 								$debug_info .= '<p>Content Type: ' . $actual_post_type . '</p>';
 								$debug_info .= '<p>Form URL: ' . content_audit_generate_form_url( $page_id ) . '</p>';
 								$debug_info .= '</div>';
-								
+
 								$message .= $debug_info;
 							}
 
@@ -380,18 +387,16 @@ function content_audit_display_table() {
 
 		endwhile;
 
-	else :
-		if ( 'posts' === $content_type ) {
+	elseif ( 'posts' === $content_type ) :
 			echo '<tr><td colspan="6">' . esc_html__( 'No posts found matching the selected criteria.', 'content-audit' ) . '</td></tr>';
-		} else {
+		else :
 			echo '<tr><td colspan="6">' . esc_html__( 'No pages found matching the selected criteria.', 'content-audit' ) . '</td></tr>';
-		}
 	endif;
 
-	wp_reset_postdata();
+		wp_reset_postdata();
 
-	echo '</tbody>';
-	echo '</table>';
+		echo '</tbody>';
+		echo '</table>';
 }
 
 /**
