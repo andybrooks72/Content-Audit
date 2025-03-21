@@ -64,7 +64,7 @@ function content_audit_render_admin_page() {
  */
 function content_audit_admin_enqueue_scripts( $hook ) {
 	// Only load on the content audit page.
-	if ( 'toplevel_page_content-audit' !== $hook && 'content-audit_page_content-audit-submissions' !== $hook ) {
+	if ( 'toplevel_page_content-audit' !== $hook && 'content-audit_page_content-audit-submissions' !== $hook && 'edit.php' !== $hook ) {
 		return;
 	}
 

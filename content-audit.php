@@ -28,6 +28,7 @@ require_once plugin_dir_path( __FILE__ ) . 'includes/form-handler.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/submissions.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/settings.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/helper-functions.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/admin-columns.php';
 
 /**
  * Initialize the plugin.
@@ -154,7 +155,7 @@ function content_audit_add_submissions_page() {
 add_action( 'admin_menu', 'content_audit_add_submissions_page' );
 
 /**
- * Uninstall hook for the plugin.
+ * Uninstall the plugin.
  *
  * WARNING: This will delete all content audit data including submissions.
  * All data will be permanently lost when uninstalling this plugin.
@@ -176,6 +177,22 @@ function content_audit_uninstall() {
 	delete_option( 'content_audit_db_version' );
 	delete_option( 'content_audit_email_settings' );
 	delete_option( 'content_audit_form_settings' );
+	delete_option( 'content_audit_display_settings' );
+
+	// Delete all post meta related to content audit.
+	// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL
+	$wpdb->query( "DELETE FROM {$wpdb->postmeta} WHERE meta_key LIKE 'next_review_date'" );
+	$wpdb->query( "DELETE FROM {$wpdb->postmeta} WHERE meta_key LIKE 'last_review_date'" );
+	$wpdb->query( "DELETE FROM {$wpdb->postmeta} WHERE meta_key LIKE 'stakeholder_name'" );
+	$wpdb->query( "DELETE FROM {$wpdb->postmeta} WHERE meta_key LIKE '_next_review_date'" );
+	$wpdb->query( "DELETE FROM {$wpdb->postmeta} WHERE meta_key LIKE '_last_review_date'" );
+	$wpdb->query( "DELETE FROM {$wpdb->postmeta} WHERE meta_key LIKE '_stakeholder_name'" );
+	$wpdb->query( "DELETE FROM {$wpdb->postmeta} WHERE meta_key LIKE 'stakeholder_department'" );
+	$wpdb->query( "DELETE FROM {$wpdb->postmeta} WHERE meta_key LIKE 'stakeholder_email'" );
+	$wpdb->query( "DELETE FROM {$wpdb->postmeta} WHERE meta_key LIKE '_stakeholder_department'" );
+	$wpdb->query( "DELETE FROM {$wpdb->postmeta} WHERE meta_key LIKE '_stakeholder_email'" );
+
+	// phpcs:enable
 }
 register_uninstall_hook( __FILE__, 'content_audit_uninstall' );
 

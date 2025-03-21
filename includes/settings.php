@@ -61,6 +61,19 @@ function content_audit_register_settings() {
 		)
 	);
 
+	// Register display settings.
+	register_setting(
+		'content_audit_settings',
+		'content_audit_display_settings',
+		array(
+			'type'              => 'array',
+			'sanitize_callback' => 'content_audit_sanitize_display_settings',
+			'default'           => array(
+				'show_admin_columns' => 'yes',
+			),
+		)
+	);
+
 	// Add a section for email settings.
 	add_settings_section(
 		'content_audit_email_settings_section',
@@ -74,6 +87,14 @@ function content_audit_register_settings() {
 		'content_audit_form_settings_section',
 		esc_html__( 'Form Settings', 'content-audit' ),
 		'content_audit_form_settings_section_callback',
+		'content_audit_settings'
+	);
+
+	// Add a section for display settings.
+	add_settings_section(
+		'content_audit_display_settings_section',
+		esc_html__( 'Display Settings', 'content-audit' ),
+		'content_audit_display_settings_section_callback',
 		'content_audit_settings'
 	);
 
@@ -109,6 +130,15 @@ function content_audit_register_settings() {
 		'content_audit_success_message_callback',
 		'content_audit_settings',
 		'content_audit_form_settings_section'
+	);
+
+	// Add fields to the display settings section.
+	add_settings_field(
+		'content_audit_show_admin_columns',
+		esc_html__( 'Show Admin Columns', 'content-audit' ),
+		'content_audit_show_admin_columns_callback',
+		'content_audit_settings',
+		'content_audit_display_settings_section'
 	);
 }
 add_action( 'admin_init', 'content_audit_register_settings' );
@@ -166,6 +196,25 @@ function content_audit_sanitize_form_settings( $input ) {
 }
 
 /**
+ * Sanitize display settings.
+ *
+ * @param array $input The input array to sanitize.
+ * @return array The sanitized input.
+ */
+function content_audit_sanitize_display_settings( $input ) {
+	$sanitized_input = array();
+
+	// Sanitize show admin columns.
+	if ( isset( $input['show_admin_columns'] ) ) {
+		$sanitized_input['show_admin_columns'] = sanitize_text_field( $input['show_admin_columns'] );
+	} else {
+		$sanitized_input['show_admin_columns'] = 'yes';
+	}
+
+	return $sanitized_input;
+}
+
+/**
  * Email settings section callback.
  *
  * @return void
@@ -181,6 +230,15 @@ function content_audit_email_settings_section_callback() {
  */
 function content_audit_form_settings_section_callback() {
 	echo '<p>' . esc_html__( 'Configure the form settings for content audit submissions.', 'content-audit' ) . '</p>';
+}
+
+/**
+ * Display settings section callback.
+ *
+ * @return void
+ */
+function content_audit_display_settings_section_callback() {
+	echo '<p>' . esc_html__( 'Configure the display settings for content audit.', 'content-audit' ) . '</p>';
 }
 
 /**
@@ -236,6 +294,23 @@ function content_audit_success_message_callback() {
 	?>
 	<textarea id="content_audit_success_message" name="content_audit_form_settings[success_message]" rows="3" class="large-text"><?php echo esc_textarea( $success_message ); ?></textarea>
 	<p class="description"><?php esc_html_e( 'Message displayed after a successful form submission.', 'content-audit' ); ?></p>
+	<?php
+}
+
+/**
+ * Show admin columns field callback.
+ *
+ * @return void
+ */
+function content_audit_show_admin_columns_callback() {
+	$options = get_option( 'content_audit_display_settings' );
+	$show_admin_columns = isset( $options['show_admin_columns'] ) ? $options['show_admin_columns'] : 'yes';
+	?>
+	<select id="content_audit_show_admin_columns" name="content_audit_display_settings[show_admin_columns]">
+		<option value="yes" <?php selected( $show_admin_columns, 'yes' ); ?>><?php esc_html_e( 'Yes', 'content-audit' ); ?></option>
+		<option value="no" <?php selected( $show_admin_columns, 'no' ); ?>><?php esc_html_e( 'No', 'content-audit' ); ?></option>
+	</select>
+	<p class="description"><?php esc_html_e( 'Show admin columns for content audit.', 'content-audit' ); ?></p>
 	<?php
 }
 
@@ -308,6 +383,21 @@ function content_audit_get_form_settings() {
 	);
 
 	$settings = get_option( 'content_audit_form_settings', $default_settings );
+
+	return $settings;
+}
+
+/**
+ * Get display settings.
+ *
+ * @return array Display settings.
+ */
+function content_audit_get_display_settings() {
+	$default_settings = array(
+		'show_admin_columns' => 'yes',
+	);
+
+	$settings = get_option( 'content_audit_display_settings', $default_settings );
 
 	return $settings;
 }
