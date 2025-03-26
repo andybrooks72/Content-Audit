@@ -303,7 +303,7 @@ function content_audit_success_message_callback() {
  * @return void
  */
 function content_audit_show_admin_columns_callback() {
-	$options = get_option( 'content_audit_display_settings' );
+	$options            = get_option( 'content_audit_display_settings' );
 	$show_admin_columns = isset( $options['show_admin_columns'] ) ? $options['show_admin_columns'] : 'yes';
 	?>
 	<select id="content_audit_show_admin_columns" name="content_audit_display_settings[show_admin_columns]">
@@ -326,7 +326,8 @@ function content_audit_render_settings_page() {
 	}
 
 	// Add error/update messages.
-	if ( isset( $_GET['settings-updated'] ) ) {
+	// WordPress Settings API handles nonce verification automatically when using settings_fields().
+	if ( isset( $_GET['settings-updated'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		// Add settings saved message with the class of "updated".
 		add_settings_error(
 			'content_audit_messages',

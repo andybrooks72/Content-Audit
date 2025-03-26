@@ -3,7 +3,7 @@
  * Plugin Name: Content Audit
  * Plugin URI: https://www.pepper.money
  * Description: Adds a custom Content Audit page to help track and manage content review dates.
- * Version: 1.1.1
+ * Version: 1.1.2
  * Author: Pepper Money
  * Author URI: https://www.pepper.money
  * Text Domain: content-audit
@@ -17,7 +17,7 @@ if ( ! defined( 'WPINC' ) ) {
 }
 
 // Define plugin constants.
-define( 'CONTENT_AUDIT_VERSION', '1.1.1' );
+define( 'CONTENT_AUDIT_VERSION', '1.1.2' );
 define( 'CONTENT_AUDIT_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CONTENT_AUDIT_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 

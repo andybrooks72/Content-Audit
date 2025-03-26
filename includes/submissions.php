@@ -34,7 +34,7 @@ function content_audit_render_submissions_page() {
 	$submissions = array();
 
 	// Check if the table exists before querying.
-	if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table_name ) ) ) ) { // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+	if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table_name ) ) ) ) { // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery // phpcs:ignoreWordPress.DB.DirectDatabaseQuery.NoCaching
 		// Process filter parameters if set.
 		$where_clause       = '';
 		$where_conditions   = array();

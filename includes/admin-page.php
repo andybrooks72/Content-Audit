@@ -59,7 +59,7 @@ function content_audit_render_admin_page() {
  * Enqueue admin styles.
  *
  * @param string $hook The current admin page hook.
- * 
+ *
  * @return void
  */
 function content_audit_admin_enqueue_scripts( $hook ) {
@@ -71,15 +71,15 @@ function content_audit_admin_enqueue_scripts( $hook ) {
 	// Register and enqueue the admin stylesheet.
 	wp_register_style(
 		'content-audit-admin-styles',
-		plugin_dir_url( dirname( __FILE__ ) ) . 'assets/css/admin-styles.css',
-		array('dashicons'),
+		plugin_dir_url( __DIR__ ) . 'assets/css/admin-styles.css',
+		array( 'dashicons' ),
 		'1.0.1',
 		'all'
 	);
 	wp_enqueue_style( 'content-audit-admin-styles' );
 
 	// Add custom inline styles for the tabbed interface.
-	$custom_css = "
+	$custom_css = '
 		.content-audit-table {
 			width: 100%;
 			border-collapse: collapse;
@@ -125,7 +125,7 @@ function content_audit_admin_enqueue_scripts( $hook ) {
 		.nav-tab-wrapper {
 			margin-bottom: 15px;
 		}
-	";
+	';
 	wp_add_inline_style( 'content-audit-admin-styles', $custom_css );
 }
 add_action( 'admin_enqueue_scripts', 'content_audit_admin_enqueue_scripts' );

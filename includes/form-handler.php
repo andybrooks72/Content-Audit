@@ -25,18 +25,18 @@ function content_audit_insert_submission( $data ) {
 	$has_content_id = wp_cache_get( $cache_key );
 
 	if ( false === $has_content_id ) {
-		$has_content_id = $wpdb->get_var(
+		$has_content_id = $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$wpdb->prepare(
 				"SHOW COLUMNS FROM `{$wpdb->prefix}content_audit_submissions` LIKE %s",
 				'content_id'
 			)
-		); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		);
 		wp_cache_set( $cache_key, $has_content_id );
 	}
 
 	if ( $has_content_id ) {
 		// New column structure exists, use content_id and content_title.
-		return $wpdb->insert(
+		return $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$table_name,
 			array(
 				'content_id'             => $data['content_id'],
@@ -65,7 +65,7 @@ function content_audit_insert_submission( $data ) {
 		);
 	} else {
 		// Old column structure, use page_id and page_title.
-		return $wpdb->insert(
+		return $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$table_name,
 			array(
 				'page_id'                => $data['content_id'],
@@ -711,7 +711,7 @@ function content_audit_form_shortcode( $atts ) {
 								echo esc_html__( 'If the page needs changing/removing confirm this by selecting "Content needs changes / I have raised an SD Ticket"', 'content-audit' );
 							} else {
 								echo esc_html__( 'If the post needs changing/removing confirm this by selecting "Content needs changes / I have raised an SD Ticket"', 'content-audit' );
-								}
+							}
 							?>
 						</li>
 					</ul>
@@ -813,9 +813,9 @@ function content_audit_generate_form_url( $content_id ) {
 	// Ensure we're using the form page ID and not the content ID for the URL base.
 	$form_page_url = get_permalink( $form_page_id );
 
-	// Get the content type (post or page)
+	// Get the content type (post or page).
 	$content_post = get_post( $content_id );
-	$content_type = ( $content_post && $content_post->post_type === 'post' ) ? 'post' : 'page';
+	$content_type = ( 'post' === $content_post->post_type ) ? 'post' : 'page';
 
 	// Generate the URL with parameters.
 	$url = add_query_arg(
