@@ -45,6 +45,10 @@
     color: #fff;
 }
 
+#content-audit-submissions-title {
+    width: 30%;
+}
+
 /* Flex container for email button and confirmation */
 .flex {
     display: flex;
