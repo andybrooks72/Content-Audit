@@ -115,6 +115,10 @@
     margin-bottom: 25px;
 }
 
+.content-audit-form ul {
+    margin-bottom: 20px;
+}
+
 .content-audit-form fieldset {
     border: none;
     padding: 0;
@@ -145,6 +149,7 @@
     cursor: pointer;
     flex: 1;
     min-width: 200px;
+    line-height: 1.2;
 }
 
 .content-audit-radio-label.needs-changes {
@@ -167,6 +172,26 @@
     border-radius: 6px;
     padding: 20px;
     border: 1px solid #ffdddd;
+}
+
+#support_ticket_field .elementor-button {
+    background-color: #d9042b;
+    border: 2px solid #d9042b;
+    color: #fff;
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+#support_ticket_field .elementor-button:hover,
+#support_ticket_field .elementor-button:focus {
+    background-color: #fff;
+    border-color: #d9042b;
+    color: #d9042b;
 }
 
 #support_ticket_field label {
@@ -199,7 +224,7 @@
     background-color: #d9042b;
     border-color: #d9042b;
     color: #fff;
-    padding: 10px 20px;
+    padding: 10px 20px !important;
     font-size: 16px;
     border-radius: 4px;
     cursor: pointer;

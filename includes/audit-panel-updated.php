@@ -347,19 +347,6 @@ function content_audit_display_table() {
 							// Email template with form URL.
 							$message = content_audit_get_email_template( $page_title, $page_url, $date, $format_out, $page_id );
 
-							// Debug information.
-							$debug_info = '';
-							if ( current_user_can( 'manage_options' ) ) {
-								$debug_info  = '<div style="margin-top: 20px; padding: 10px; background-color: #f8f8f8; border: 1px solid #ddd; font-size: 12px;">';
-								$debug_info .= '<p>Debug Info:</p>';
-								$debug_info .= '<p>Page ID: ' . $page_id . '</p>';
-								$debug_info .= '<p>Content Type: ' . $actual_post_type . '</p>';
-								$debug_info .= '<p>Form URL: ' . content_audit_generate_form_url( $page_id ) . '</p>';
-								$debug_info .= '</div>';
-
-								$message .= $debug_info;
-							}
-
 							wp_mail( $to, $subject, $message, $headers );
 
 							echo '<div class="message">✔</div>';
@@ -679,23 +666,21 @@ function content_audit_get_email_template( $page_title, $page_url, $date, $forma
 									<td
 										style='padding: 20px; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #555555;'>
 										<h1
-											style='margin: 0 0 10px 0; font-family: sans-serif; font-size: 25px; line-height: 30px; color: #333333; font-weight: normal;'>
-											You have been assigned a $content_type_label to review the content of: $page_title</h1>
-										<p style='margin: 0;'>The $content_type_label that needs to be reviewed: <a href='$page_url'>$page_title</a></p>
+											style='margin: 0 0 10px 0; font-family: sans-serif; font-size: 22px; line-height: 30px; color: #333333; font-weight: normal;'>
+											You have been assigned a $content_type_label to review: <a href='$page_url'>$page_title</a></h1>
+										<p style='margin: 0 0 10px 0;'>Please click on the link above to check if the post is still up to date or if it needs editing or removing</p>
+										<p style='margin: 0 0 10px 0;'>If you have any issues accessing the link, email the UX team on <a href='mailto:ux@pepper.money'>ux@pepper.money</a> or contact a member of the team</p>
 									</td>
 								</tr>
 								<tr>
 									<td
 										style='padding: 20px; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #555555;'>
-										<h2
-											style='margin: 0 0 10px 0; font-family: sans-serif; font-size: 18px; line-height: 22px; color: #333333; font-weight: bold;'>
-											Please can review the content on the $content_type_label by:</h2>
+										<p style='margin: 0 0 10px 0;>Once you've finished your review</p>
 										<ul style='padding: 0; margin: 0 0 10px 0; list-style-type: disc;'>
-											<li style='margin:0 0 10px 30px;' class='list-item-first'>Click the $content_type_label link above to view the content that needs review.</li>
-											<li style='margin:0 0 10px 30px;'>Review the content of the $content_type_label.</li>
-											" . ($form_url ? "<li style='margin:0 0 10px 30px; font-weight: bold;'>Complete the review by using this form: <a href='$form_url' style='color: #0073aa; text-decoration: underline; font-weight: bold; background-color: #f0f8ff; padding: 3px 6px; border-radius: 3px;'>Content Review Form</a></li>" : "") . "
+											<li style='margin:0 0 10px 20px;' class='list-item-first'>If the post is still up to date confirm this by completing the <a href='$form_url' style='color: #0073aa; text-decoration: underline; font-weight: bold; background-color: #f0f8ff; padding: 3px 6px; border-radius: 3px;'>Content Review Form</a>.</li>
+											" . ($form_url ? "<li style='margin:0 0 10px 20px;'>If the post needs editing or removing raise an <a href='https://helpdesk.pepper.money:8080/homepage.dp?' style='color: #0073aa; text-decoration: underline; font-weight: bold; background-color: #f0f8ff; padding: 3px 6px; border-radius: 3px;'>SD ticket</a> detailing the change before completing the <a href='$form_url' style='color: #0073aa; text-decoration: underline; font-weight: bold; background-color: #f0f8ff; padding: 3px 6px; border-radius: 3px;'>Content Review Form</a>. Please note you will need to include your SD ticket number on the form.</li>" : "") . "
 										</ul>
-										<p style='margin: 0 0 10px 0;'>The content needs to be reviewed by the folowing date: <strong>" . $date->format( $format_out ) . "</strong></p>
+										<p style='margin: 0 0 10px 0;'>The content needs to be reviewed by: <strong>" . $date->format( $format_out ) . "</strong></p>
 										<p style='margin: 0 0 10px 0;'>Kind regards</p>
 										<p style='margin: 0;'>Pepper Money UX Team</p>
 									</td>

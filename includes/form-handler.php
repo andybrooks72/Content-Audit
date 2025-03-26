@@ -663,42 +663,80 @@ function content_audit_form_shortcode( $atts ) {
 					<strong><?php echo esc_html__( 'Stakeholder:', 'content-audit' ); ?></strong>
 					<span><?php echo esc_html( $stakeholder_name ); ?> (<?php echo esc_html( $stakeholder_department ); ?>)</span>
 				</p>
-			</div>
+				
+			</div>	
 			
 			<form method="post" class="content-audit-form">
 				<?php wp_nonce_field( 'content_audit_form_' . $content_id, 'content_audit_nonce' ); ?>
 				
 				<div class="form-field">
-					<fieldset>
-						<legend>
+					<legend>
+						<?php
+						// Display different label based on content type.
+						if ( 'page' === $content_type ) {
+							echo esc_html__( 'Page Review Status:', 'content-audit' );
+						} else {
+							echo esc_html__( 'Post Review Status:', 'content-audit' );
+						}
+						?>
+					</legend>
+
+					<p>
+						<strong>
 							<?php
-							// Display different label based on content type.
+								// Display different text based on content type.
 							if ( 'page' === $content_type ) {
-								echo esc_html__( 'Page Review Status:', 'content-audit' );
+								echo esc_html__( 'If the page is still up to date or if it needs editing or removing:', 'content-audit' );
 							} else {
-								echo esc_html__( 'Post Review Status:', 'content-audit' );
+								echo esc_html__( 'If the post is still up to date or if it needs editing or removing:', 'content-audit' );
 							}
 							?>
-						</legend>
-						
-						<div class="content-audit-radio-options">
-							<label for="needs_changes_no" class="content-audit-radio-label">
-								<input type="radio" name="needs_changes" id="needs_changes_no" value="0" checked="checked" />
-								<span><?php echo esc_html__( 'Content is accurate and up-to-date', 'content-audit' ); ?></span>
+						</strong>
+					</p>
+					<ul>
+						<li>
+							<?php
+							// Display different text based on content type.
+							if ( 'page' === $content_type ) {
+								echo esc_html__( 'If the page is still up to date confirm this by selecting "Content is accurate and up-to-date"', 'content-audit' );
+							} else {
+								echo esc_html__( 'If the post is still up to date confirm this by selecting "Content is accurate and up-to-date"', 'content-audit' );
+							}
+							?>
+						</li>
+						<li>
+							<?php
+							// Display different text based on content type.
+							if ( 'page' === $content_type ) {
+								echo esc_html__( 'If the page needs changing/removing confirm this by selecting "Content needs changes / I have raised an SD Ticket"', 'content-audit' );
+							} else {
+								echo esc_html__( 'If the post needs changing/removing confirm this by selecting "Content needs changes / I have raised an SD Ticket"', 'content-audit' );
+								}
+							?>
+						</li>
+					</ul>
+					
+					<div class="content-audit-radio-options">
+						<label for="needs_changes_no" class="content-audit-radio-label">
+							<input type="radio" name="needs_changes" id="needs_changes_no" value="0" checked="checked" />
+							<span><?php echo esc_html__( 'Content is accurate and up-to-date', 'content-audit' ); ?></span>
 							</label>
 							
 							<label for="needs_changes_yes" class="content-audit-radio-label needs-changes">
 								<input type="radio" name="needs_changes" id="needs_changes_yes" value="1" />
-								<span><?php echo esc_html__( 'Content needs changes', 'content-audit' ); ?></span>
+								<span><?php echo esc_html__( 'Content needs changes / I have raised an SD Ticket', 'content-audit' ); ?></span>
 							</label>
 						</div>
 					</fieldset>
 				</div>
 				
 				<div id="support_ticket_field">
-					<label for="support_ticket_url"><?php echo esc_html__( 'Support Ticket URL (if applicable):', 'content-audit' ); ?></label>
+					<p>
+						<a class="button elementor-button" href="https://helpdesk.pepper.money:8080/homepage.dp?" target="_blank"><?php echo esc_html__( 'Raise an SD Ticket', 'content-audit' ); ?></a>
+					</p>
+					<label for="support_ticket_url"><?php echo esc_html__( 'SD Ticket URL:', 'content-audit' ); ?></label>
 					<input type="url" name="support_ticket_url" id="support_ticket_url" class="regular-text" placeholder="https://" />
-					<p class="description"><?php echo esc_html__( 'If you have created a support ticket for the required changes, please enter the URL here.', 'content-audit' ); ?></p>
+					<p class="description"><?php echo esc_html__( 'If you have created a SD Ticket for the required changes, please enter the URL to the ticket here.', 'content-audit' ); ?></p>
 				</div>
 				
 				<div class="content-audit-submit">
@@ -774,10 +812,10 @@ function content_audit_generate_form_url( $content_id ) {
 
 	// Ensure we're using the form page ID and not the content ID for the URL base.
 	$form_page_url = get_permalink( $form_page_id );
-	
+
 	// Get the content type (post or page)
-	$content_post = get_post($content_id);
-	$content_type = ($content_post && $content_post->post_type === 'post') ? 'post' : 'page';
+	$content_post = get_post( $content_id );
+	$content_type = ( $content_post && $content_post->post_type === 'post' ) ? 'post' : 'page';
 
 	// Generate the URL with parameters.
 	$url = add_query_arg(
