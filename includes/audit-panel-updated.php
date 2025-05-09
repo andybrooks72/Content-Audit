@@ -47,7 +47,7 @@ function content_audit_display_table() {
 		);
 		?>
 					" class="nav-tab <?php echo 'pages' === $content_type ? 'nav-tab-active' : ''; ?>">
-			<?php esc_html_e( 'Pages', 'content-audit' ); ?>
+			<?php esc_html_e( 'Pages', 'peppermoney-content-audit' ); ?>
 		</a>
 		<a href="
 		<?php
@@ -62,10 +62,10 @@ function content_audit_display_table() {
 		);
 		?>
 					" class="nav-tab <?php echo 'posts' === $content_type ? 'nav-tab-active' : ''; ?>">
-			<?php esc_html_e( 'Posts', 'content-audit' ); ?>
+			<?php esc_html_e( 'Posts', 'peppermoney-content-audit' ); ?>
 		</a>
 	</div>
-	
+
 	<!-- Add filter dropdown -->
 	<div class="tablenav top">
 		<div class="alignleft actions">
@@ -73,14 +73,14 @@ function content_audit_display_table() {
 				<input type="hidden" name="page" value="content-audit">
 				<input type="hidden" name="content_type" value="<?php echo esc_attr( $content_type ); ?>">
 				<select name="filter">
-					<option value="30days" <?php selected( $filter, '30days' ); ?>><?php esc_html_e( 'Next 30 Days & Overdue', 'content-audit' ); ?></option>
-					<option value="overdue" <?php selected( $filter, 'overdue' ); ?>><?php esc_html_e( 'Overdue Only', 'content-audit' ); ?></option>
-					<option value="3months" <?php selected( $filter, '3months' ); ?>><?php esc_html_e( 'Next 3 Months', 'content-audit' ); ?></option>
-					<option value="6months" <?php selected( $filter, '6months' ); ?>><?php esc_html_e( 'Next 6 Months', 'content-audit' ); ?></option>
-					<option value="12months" <?php selected( $filter, '12months' ); ?>><?php esc_html_e( 'Next 12 Months', 'content-audit' ); ?></option>
-					<option value="all" <?php selected( $filter, 'all' ); ?>><?php esc_html_e( 'All Content', 'content-audit' ); ?></option>
+					<option value="30days" <?php selected( $filter, '30days' ); ?>><?php esc_html_e( 'Next 30 Days & Overdue', 'peppermoney-content-audit' ); ?></option>
+					<option value="overdue" <?php selected( $filter, 'overdue' ); ?>><?php esc_html_e( 'Overdue Only', 'peppermoney-content-audit' ); ?></option>
+					<option value="3months" <?php selected( $filter, '3months' ); ?>><?php esc_html_e( 'Next 3 Months', 'peppermoney-content-audit' ); ?></option>
+					<option value="6months" <?php selected( $filter, '6months' ); ?>><?php esc_html_e( 'Next 6 Months', 'peppermoney-content-audit' ); ?></option>
+					<option value="12months" <?php selected( $filter, '12months' ); ?>><?php esc_html_e( 'Next 12 Months', 'peppermoney-content-audit' ); ?></option>
+					<option value="all" <?php selected( $filter, 'all' ); ?>><?php esc_html_e( 'All Content', 'peppermoney-content-audit' ); ?></option>
 				</select>
-				<input type="submit" class="button" value="<?php esc_attr_e( 'Filter', 'content-audit' ); ?>">
+				<input type="submit" class="button" value="<?php esc_attr_e( 'Filter', 'peppermoney-content-audit' ); ?>">
 			</form>
 		</div>
 		<br class="clear">
@@ -294,7 +294,7 @@ function content_audit_display_table() {
 					// Add edit link for WordPress admin.
 					$edit_link = get_edit_post_link( $page_id );
 					if ( $edit_link ) {
-						echo '<a href="' . esc_url( $edit_link ) . '" class="edit-link" title="' . esc_attr__( 'Edit this content', 'content-audit' ) . '"><span class="dashicons dashicons-edit"></span></a>';
+						echo '<a href="' . esc_url( $edit_link ) . '" class="edit-link" title="' . esc_attr__( 'Edit this content', 'peppermoney-content-audit' ) . '"><span class="dashicons dashicons-edit"></span></a>';
 					}
 					?>
 				</th>
@@ -326,10 +326,10 @@ function content_audit_display_table() {
 							// Use proper translation strings for different content types.
 							if ( 'post' === $actual_post_type ) {
 								/* translators: %s: post title */
-								$subject = sprintf( esc_html__( 'The following post requires your attention: %s', 'content-audit' ), get_the_title() );
+								$subject = sprintf( esc_html__( 'The following post requires your attention: %s', 'peppermoney-content-audit' ), get_the_title() );
 							} else {
 								/* translators: %s: page title */
-								$subject = sprintf( esc_html__( 'The following page requires your attention: %s', 'content-audit' ), get_the_title() );
+								$subject = sprintf( esc_html__( 'The following page requires your attention: %s', 'peppermoney-content-audit' ), get_the_title() );
 							}
 
 							// Set up email headers.
@@ -375,9 +375,9 @@ function content_audit_display_table() {
 		endwhile;
 
 	elseif ( 'posts' === $content_type ) :
-			echo '<tr><td colspan="6">' . esc_html__( 'No posts found matching the selected criteria.', 'content-audit' ) . '</td></tr>';
+			echo '<tr><td colspan="6">' . esc_html__( 'No posts found matching the selected criteria.', 'peppermoney-content-audit' ) . '</td></tr>';
 		else :
-			echo '<tr><td colspan="6">' . esc_html__( 'No pages found matching the selected criteria.', 'content-audit' ) . '</td></tr>';
+			echo '<tr><td colspan="6">' . esc_html__( 'No pages found matching the selected criteria.', 'peppermoney-content-audit' ) . '</td></tr>';
 	endif;
 
 		wp_reset_postdata();

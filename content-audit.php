@@ -1,12 +1,12 @@
 <?php
 /**
- * Plugin Name: Content Audit
+ * Plugin Name: Peppermoney Content Audit
  * Plugin URI: https://www.pepper.money
  * Description: Adds a custom Content Audit page to help track and manage content review dates.
  * Version: 1.1.2
  * Author: Pepper Money
  * Author URI: https://www.pepper.money
- * Text Domain: content-audit
+ * Text Domain: peppermoney-content-audit
  *
  * @package ContentAudit
  */
@@ -145,8 +145,8 @@ add_shortcode( 'content_audit_form', 'content_audit_form_shortcode' );
 function content_audit_add_submissions_page() {
 	add_submenu_page(
 		'content-audit',
-		esc_html__( 'Content Review Submissions', 'content-audit' ),
-		esc_html__( 'Submissions', 'content-audit' ),
+		esc_html__( 'Content Review Submissions', 'peppermoney-content-audit' ),
+		esc_html__( 'Submissions', 'peppermoney-content-audit' ),
 		'manage_options',
 		'content-audit-submissions',
 		'content_audit_render_submissions_page'
@@ -214,16 +214,16 @@ function content_audit_add_uninstall_confirmation() {
 	document.addEventListener('DOMContentLoaded', function() {
 		// Find the Content Audit plugin's delete link.
 		const deleteLinks = document.querySelectorAll('a.delete[data-plugin="content-audit/content-audit.php"]');
-		
+
 		if (deleteLinks.length > 0) {
 			// Add click event listener to each delete link.
 			deleteLinks.forEach(function(link) {
 				link.addEventListener('click', function(event) {
 					// Prevent the default action.
 					event.preventDefault();
-					
+
 					// Show confirmation dialog.
-					if (confirm('<?php echo esc_js( __( 'WARNING: Uninstalling the Content Audit plugin will permanently delete all content audit data, including all submissions. This action cannot be undone. Are you sure you want to continue?', 'content-audit' ) ); ?>')) {
+					if (confirm('<?php echo esc_js( __( 'WARNING: Uninstalling the Content Audit plugin will permanently delete all content audit data, including all submissions. This action cannot be undone. Are you sure you want to continue?', 'peppermoney-content-audit' ) ); ?>')) {
 						// If confirmed, follow the original link.
 						window.location.href = this.href;
 					}

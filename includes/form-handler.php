@@ -127,15 +127,15 @@ function content_audit_form_shortcode( $atts ) {
 		$form_page_id = get_option( 'content_audit_form_page_id' );
 		if ( $form_page_id && get_the_ID() === (int) $form_page_id ) {
 			return '<div class="content-audit-form-message">
-				<h2>' . esc_html__( 'Content Review Form', 'content-audit' ) . '</h2>
-				<p>' . esc_html__( 'This form is designed to be accessed from the link provided in content review emails.', 'content-audit' ) . '</p>
-				<p>' . esc_html__( 'If you received an email about reviewing content, please use the link in that email to access this form with the correct parameters.', 'content-audit' ) . '</p>
-				<p>' . esc_html__( 'If you are a site administrator testing this form, you need to provide content_page_id and token parameters.', 'content-audit' ) . '</p>
+				<h2>' . esc_html__( 'Content Review Form', 'peppermoney-content-audit' ) . '</h2>
+				<p>' . esc_html__( 'This form is designed to be accessed from the link provided in content review emails.', 'peppermoney-content-audit' ) . '</p>
+				<p>' . esc_html__( 'If you received an email about reviewing content, please use the link in that email to access this form with the correct parameters.', 'peppermoney-content-audit' ) . '</p>
+				<p>' . esc_html__( 'If you are a site administrator testing this form, you need to provide content_page_id and token parameters.', 'peppermoney-content-audit' ) . '</p>
 			</div>';
 		} else {
 			// For other pages using the shortcode directly.
 			return '<div class="content-audit-form-error">
-				<p>' . esc_html__( 'Invalid form parameters. This form must be accessed from the link provided in the content review email.', 'content-audit' ) . '</p>
+				<p>' . esc_html__( 'Invalid form parameters. This form must be accessed from the link provided in the content review email.', 'peppermoney-content-audit' ) . '</p>
 			</div>';
 		}
 	}
@@ -146,13 +146,13 @@ function content_audit_form_shortcode( $atts ) {
 	$expected_token = wp_hash( 'content_audit_' . $content_id . get_the_title( $content_id ) );
 
 	if ( $token !== $expected_token ) {
-		return '<p>' . esc_html__( 'Invalid or expired form link.', 'content-audit' ) . '</p>';
+		return '<p>' . esc_html__( 'Invalid or expired form link.', 'peppermoney-content-audit' ) . '</p>';
 	}
 
 	// Get content data.
 	$content = get_post( $content_id );
 	if ( ! $content || ! in_array( $content->post_type, array( 'page', 'post' ), true ) ) {
-		return '<p>' . esc_html__( 'Content not found.', 'content-audit' ) . '</p>';
+		return '<p>' . esc_html__( 'Content not found.', 'peppermoney-content-audit' ) . '</p>';
 	}
 
 	// Get content type.
@@ -161,7 +161,7 @@ function content_audit_form_shortcode( $atts ) {
 	// Get ACF fields.
 	$content_audit = get_fields( $content_id );
 	if ( empty( $content_audit ) ) {
-		return '<p>' . esc_html__( 'Content audit data not found.', 'content-audit' ) . '</p>';
+		return '<p>' . esc_html__( 'Content audit data not found.', 'peppermoney-content-audit' ) . '</p>';
 	}
 
 	$stakeholder_name       = $content_audit['stakeholder_name'];
@@ -178,7 +178,7 @@ function content_audit_form_shortcode( $atts ) {
 	if ( isset( $_POST['content_audit_submit'] ) && isset( $_POST['content_audit_nonce'] ) ) {
 		// Verify nonce.
 		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['content_audit_nonce'] ) ), 'content_audit_form_' . $content_id ) ) {
-			$form_errors[] = esc_html__( 'Security verification failed. Please try again.', 'content-audit' );
+			$form_errors[] = esc_html__( 'Security verification failed. Please try again.', 'peppermoney-content-audit' );
 		} else {
 			// Process form data.
 			$needs_changes      = isset( $_POST['needs_changes'] ) && '1' === $_POST['needs_changes'] ? 1 : 0;
@@ -244,7 +244,7 @@ function content_audit_form_shortcode( $atts ) {
 				$admin_email = get_option( 'admin_email' );
 				$subject     = sprintf(
 					/* translators: %s: page title */
-					esc_html__( 'Content Review Submission for %s', 'content-audit' ),
+					esc_html__( 'Content Review Submission for %s', 'peppermoney-content-audit' ),
 					get_the_title( $content_id )
 				);
 
@@ -495,14 +495,14 @@ function content_audit_form_shortcode( $atts ) {
 														<tr>
 															<th style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; background-color: #f9f9f9; font-weight: 600; font-family: sans-serif; font-size: 15px; line-height: 20px;'>Page</th>
 															<td style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 15px; line-height: 20px;'><a href='";
-				
+
 				// Get the relative path from the permalink.
 				$permalink = get_permalink( $content_id );
 				$site_url  = site_url();
 				$relative_path = str_replace( $site_url, '', $permalink );
 				// Create the live site URL.
 				$live_site_url = 'https://www.pepper.money' . $relative_path;
-				
+
 				$message .= esc_url( $live_site_url ) . "'>" . esc_html( get_the_title( $content_id ) ) . "</a></td>
 														</tr>
 														<tr>
@@ -515,23 +515,23 @@ function content_audit_form_shortcode( $atts ) {
 														</tr>
 														<tr>
 															<th style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; background-color: #f9f9f9; font-weight: 600; font-family: sans-serif; font-size: 15px; line-height: 20px;'>Changes Needed</th>
-															<td style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 15px; line-height: 20px; " . ($needs_changes ? 'color: #d9042b; font-weight: bold;' : 'color: #46b450;') . "'>" . ($needs_changes ? esc_html__( 'Yes', 'content-audit' ) : esc_html__( 'No', 'content-audit' )) . "</td>
+															<td style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 15px; line-height: 20px; " . ($needs_changes ? 'color: #d9042b; font-weight: bold;' : 'color: #46b450;') . "'>" . ($needs_changes ? esc_html__( 'Yes', 'content-audit' ) : esc_html__( 'No', 'peppermoney-content-audit' )) . "</td>
 														</tr>";
-				
+
 				// Only include support ticket URL if provided.
 				if ( ! empty( $support_ticket_url ) ) {
 					$message .= "
 														<tr>
 															<th style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; background-color: #f9f9f9; font-weight: 600; font-family: sans-serif; font-size: 15px; line-height: 20px;'>Support Ticket</th>
-															<td style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 15px; line-height: 20px;'><a href='" . esc_url( $support_ticket_url ) . "'>" . esc_html__( 'View Ticket', 'content-audit' ) . "</a></td>
+															<td style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 15px; line-height: 20px;'><a href='" . esc_url( $support_ticket_url ) . "'>" . esc_html__( 'View Ticket', 'peppermoney-content-audit' ) . "</a></td>
 														</tr>";
 				}
-				
+
 				$message .= "
 													</table>
 													<p style='margin: 0 0 10px 0;'>You can view all content audit submissions in the admin dashboard.</p>
 													<p style='margin: 0 0 20px 0;'>Kind regards,<br>Pepper Money UX Team</p>
-													<a href='" . esc_url( $submissions_url ) . "' style='display: block; background-color: #d9042b; color: #fff; padding: 10px 15px; text-decoration: none; border-radius: 3px; margin-top: 15px;'>" . esc_html__( 'View All Submissions', 'content-audit' ) . "</a>
+													<a href='" . esc_url( $submissions_url ) . "' style='display: block; background-color: #d9042b; color: #fff; padding: 10px 15px; text-decoration: none; border-radius: 3px; margin-top: 15px;'>" . esc_html__( 'View All Submissions', 'peppermoney-content-audit' ) . "</a>
 												</td>
 											</tr>
 										</table>
@@ -575,7 +575,7 @@ function content_audit_form_shortcode( $atts ) {
 
 				wp_mail( $notification_email, $subject, $message, $headers );
 			} else {
-				$form_errors[] = esc_html__( 'Failed to save your submission. Please try again.', 'content-audit' );
+				$form_errors[] = esc_html__( 'Failed to save your submission. Please try again.', 'peppermoney-content-audit' );
 			}
 		}
 	}
@@ -585,7 +585,7 @@ function content_audit_form_shortcode( $atts ) {
 
 	if ( $form_submitted ) {
 		echo '<div class="content-audit-success">';
-		echo '<h2>' . esc_html__( 'Thank You!', 'content-audit' ) . '</h2>';
+		echo '<h2>' . esc_html__( 'Thank You!', 'peppermoney-content-audit' ) . '</h2>';
 		echo '<p>' . esc_html( $success_message ) . '</p>';
 		echo '</div>';
 	} else {
@@ -600,22 +600,22 @@ function content_audit_form_shortcode( $atts ) {
 		?>
 		<div class="content-audit-form-wrapper">
 			<div class="content-audit-header">
-				<h2><?php echo esc_html__( 'Content Review Form', 'content-audit' ); ?></h2>
+				<h2><?php echo esc_html__( 'Content Review Form', 'peppermoney-content-audit' ); ?></h2>
 				<p><?php echo esc_html__( 'Please review the content and submit your feedback.', 'content-audit' ); ?></p>
 			</div>
-			
+
 			<div class="content-audit-page-info">
 				<h3>
 					<?php
 					// Display different heading based on content type.
 					if ( 'page' === $content_type ) {
-						echo esc_html__( 'Page Information', 'content-audit' );
+						echo esc_html__( 'Page Information', 'peppermoney-content-audit' );
 					} else {
-						echo esc_html__( 'Post Information', 'content-audit' );
+						echo esc_html__( 'Post Information', 'peppermoney-content-audit' );
 					}
 					?>
 				</h3>
-				
+
 				<div class="content-audit-grid">
 					<div>
 						<p>
@@ -623,17 +623,17 @@ function content_audit_form_shortcode( $atts ) {
 								<?php
 								// Display different label based on content type.
 								if ( 'page' === $content_type ) {
-									echo esc_html__( 'Page Title:', 'content-audit' );
+									echo esc_html__( 'Page Title:', 'peppermoney-content-audit' );
 								} else {
-									echo esc_html__( 'Post Title:', 'content-audit' );
+									echo esc_html__( 'Post Title:', 'peppermoney-content-audit' );
 								}
 								?>
 							</strong>
 							<span><?php echo esc_html( get_the_title( $content_id ) ); ?></span>
 						</p>
-					
+
 						<p>
-							<strong><?php echo esc_html__( 'URL:', 'content-audit' ); ?></strong>
+							<strong><?php echo esc_html__( 'URL:', 'peppermoney-content-audit' ); ?></strong>
 							<?php
 							// Get the relative path from the permalink.
 							$permalink     = get_permalink( $content_id );
@@ -645,38 +645,38 @@ function content_audit_form_shortcode( $atts ) {
 							<a href="<?php echo esc_url( $live_site_url ); ?>" target="_blank"><?php echo esc_url( $live_site_url ); ?></a>
 						</p>
 					</div>
-					
+
 					<div>
 						<p>
-							<strong><?php echo esc_html__( 'Last Review Date:', 'content-audit' ); ?></strong>
-							<span><?php echo esc_html( ! empty( $last_review_date ) ? date_i18n( 'F j, Y', strtotime( $last_review_date ) ) : esc_html__( 'Not set', 'content-audit' ) ); ?></span>
+							<strong><?php echo esc_html__( 'Last Review Date:', 'peppermoney-content-audit' ); ?></strong>
+							<span><?php echo esc_html( ! empty( $last_review_date ) ? date_i18n( 'F j, Y', strtotime( $last_review_date ) ) : esc_html__( 'Not set', 'peppermoney-content-audit' ) ); ?></span>
 						</p>
-					
+
 						<p>
-							<strong><?php echo esc_html__( 'Next Review Date:', 'content-audit' ); ?></strong>
-							<span><?php echo esc_html( ! empty( $next_review_date ) ? date_i18n( 'F j, Y', strtotime( $next_review_date ) ) : esc_html__( 'Not set', 'content-audit' ) ); ?></span>
+							<strong><?php echo esc_html__( 'Next Review Date:', 'peppermoney-content-audit' ); ?></strong>
+							<span><?php echo esc_html( ! empty( $next_review_date ) ? date_i18n( 'F j, Y', strtotime( $next_review_date ) ) : esc_html__( 'Not set', 'peppermoney-content-audit' ) ); ?></span>
 						</p>
 					</div>
 				</div>
-				
+
 				<p class="content-audit-stakeholder">
-					<strong><?php echo esc_html__( 'Stakeholder:', 'content-audit' ); ?></strong>
+					<strong><?php echo esc_html__( 'Stakeholder:', 'peppermoney-content-audit' ); ?></strong>
 					<span><?php echo esc_html( $stakeholder_name ); ?> (<?php echo esc_html( $stakeholder_department ); ?>)</span>
 				</p>
-				
-			</div>	
-			
+
+			</div>
+
 			<form method="post" class="content-audit-form">
 				<?php wp_nonce_field( 'content_audit_form_' . $content_id, 'content_audit_nonce' ); ?>
-				
+
 				<div class="form-field">
 					<legend>
 						<?php
 						// Display different label based on content type.
 						if ( 'page' === $content_type ) {
-							echo esc_html__( 'Page Review Status:', 'content-audit' );
+							echo esc_html__( 'Page Review Status:', 'peppermoney-content-audit' );
 						} else {
-							echo esc_html__( 'Post Review Status:', 'content-audit' );
+							echo esc_html__( 'Post Review Status:', 'peppermoney-content-audit' );
 						}
 						?>
 					</legend>
@@ -686,9 +686,9 @@ function content_audit_form_shortcode( $atts ) {
 							<?php
 								// Display different text based on content type.
 							if ( 'page' === $content_type ) {
-								echo esc_html__( 'If the page is still up to date or if it needs editing or removing:', 'content-audit' );
+								echo esc_html__( 'If the page is still up to date or if it needs editing or removing:', 'peppermoney-content-audit' );
 							} else {
-								echo esc_html__( 'If the post is still up to date or if it needs editing or removing:', 'content-audit' );
+								echo esc_html__( 'If the post is still up to date or if it needs editing or removing:', 'peppermoney-content-audit' );
 							}
 							?>
 						</strong>
@@ -698,9 +698,9 @@ function content_audit_form_shortcode( $atts ) {
 							<?php
 							// Display different text based on content type.
 							if ( 'page' === $content_type ) {
-								echo esc_html__( 'If the page is still up to date confirm this by selecting "Content is accurate and up-to-date"', 'content-audit' );
+								echo esc_html__( 'If the page is still up to date confirm this by selecting "Content is accurate and up-to-date"', 'peppermoney-content-audit' );
 							} else {
-								echo esc_html__( 'If the post is still up to date confirm this by selecting "Content is accurate and up-to-date"', 'content-audit' );
+								echo esc_html__( 'If the post is still up to date confirm this by selecting "Content is accurate and up-to-date"', 'peppermoney-content-audit' );
 							}
 							?>
 						</li>
@@ -708,39 +708,39 @@ function content_audit_form_shortcode( $atts ) {
 							<?php
 							// Display different text based on content type.
 							if ( 'page' === $content_type ) {
-								echo esc_html__( 'If the page needs changing/removing confirm this by selecting "Content needs changes / I have raised an SD Ticket"', 'content-audit' );
+								echo esc_html__( 'If the page needs changing/removing confirm this by selecting "Content needs changes / I have raised an SD Ticket"', 'peppermoney-content-audit' );
 							} else {
-								echo esc_html__( 'If the post needs changing/removing confirm this by selecting "Content needs changes / I have raised an SD Ticket"', 'content-audit' );
+								echo esc_html__( 'If the post needs changing/removing confirm this by selecting "Content needs changes / I have raised an SD Ticket"', 'peppermoney-content-audit' );
 							}
 							?>
 						</li>
 					</ul>
-					
+
 					<div class="content-audit-radio-options">
 						<label for="needs_changes_no" class="content-audit-radio-label">
 							<input type="radio" name="needs_changes" id="needs_changes_no" value="0" checked="checked" />
-							<span><?php echo esc_html__( 'Content is accurate and up-to-date', 'content-audit' ); ?></span>
+							<span><?php echo esc_html__( 'Content is accurate and up-to-date', 'peppermoney-content-audit' ); ?></span>
 							</label>
-							
+
 							<label for="needs_changes_yes" class="content-audit-radio-label needs-changes">
 								<input type="radio" name="needs_changes" id="needs_changes_yes" value="1" />
-								<span><?php echo esc_html__( 'Content needs changes / I have raised an SD Ticket', 'content-audit' ); ?></span>
+								<span><?php echo esc_html__( 'Content needs changes / I have raised an SD Ticket', 'peppermoney-content-audit' ); ?></span>
 							</label>
 						</div>
 					</fieldset>
 				</div>
-				
+
 				<div id="support_ticket_field">
 					<p>
-						<a class="button elementor-button" href="https://helpdesk.pepper.money:8080/homepage.dp?" target="_blank"><?php echo esc_html__( 'Raise an SD Ticket', 'content-audit' ); ?></a>
+						<a class="button elementor-button" href="https://helpdesk.pepper.money:8080/homepage.dp?" target="_blank"><?php echo esc_html__( 'Raise an SD Ticket', 'peppermoney-content-audit' ); ?></a>
 					</p>
-					<label for="support_ticket_url"><?php echo esc_html__( 'SD Ticket URL:', 'content-audit' ); ?></label>
+					<label for="support_ticket_url"><?php echo esc_html__( 'SD Ticket URL:', 'peppermoney-content-audit' ); ?></label>
 					<input type="url" name="support_ticket_url" id="support_ticket_url" class="regular-text" placeholder="https://" />
-					<p class="description"><?php echo esc_html__( 'If you have created a SD Ticket for the required changes, please enter the URL to the ticket here.', 'content-audit' ); ?></p>
+					<p class="description"><?php echo esc_html__( 'If you have created a SD Ticket for the required changes, please enter the URL to the ticket here.', 'peppermoney-content-audit' ); ?></p>
 				</div>
-				
+
 				<div class="content-audit-submit">
-					<input type="submit" name="content_audit_submit" class="button button-primary" value="<?php echo esc_attr__( 'Submit Review', 'content-audit' ); ?>" />
+					<input type="submit" name="content_audit_submit" class="button button-primary" value="<?php echo esc_attr__( 'Submit Review', 'peppermoney-content-audit' ); ?>" />
 				</div>
 			</form>
 		</div>
@@ -793,7 +793,7 @@ function content_audit_generate_form_url( $content_id ) {
 			// Create a new page for the form.
 			$form_page_id = wp_insert_post(
 				array(
-					'post_title'     => esc_html__( 'Content Review Form', 'content-audit' ),
+					'post_title'     => esc_html__( 'Content Review Form', 'peppermoney-content-audit' ),
 					'post_content'   => '[content_audit_form]',
 					'post_status'    => 'publish',
 					'post_type'      => 'page',

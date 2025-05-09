@@ -48,9 +48,9 @@ function content_audit_add_columns( $columns ) {
 
 		// Add our column after the 'Modified' column.
 		if ( 'Modified' === $key ) {
-			$new_columns['last_review_date'] = esc_html__( 'Last Review Date', 'content-audit' );
-			$new_columns['next_review_date'] = esc_html__( 'Next Review Date', 'content-audit' );
-			$new_columns['stakeholder_name'] = esc_html__( 'Stakeholder', 'content-audit' );
+			$new_columns['last_review_date'] = esc_html__( 'Last Review Date', 'peppermoney-content-audit' );
+			$new_columns['next_review_date'] = esc_html__( 'Next Review Date', 'peppermoney-content-audit' );
+			$new_columns['stakeholder_name'] = esc_html__( 'Stakeholder', 'peppermoney-content-audit' );
 		}
 	}
 

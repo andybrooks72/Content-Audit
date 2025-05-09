@@ -18,8 +18,8 @@ if ( ! defined( 'WPINC' ) ) {
 function content_audit_register_settings_page() {
 	add_submenu_page(
 		'content-audit',
-		esc_html__( 'Settings', 'content-audit' ),
-		esc_html__( 'Settings', 'content-audit' ),
+		esc_html__( 'Settings', 'peppermoney-content-audit' ),
+		esc_html__( 'Settings', 'peppermoney-content-audit' ),
 		'manage_options',
 		'content-audit-settings',
 		'content_audit_render_settings_page'
@@ -77,7 +77,7 @@ function content_audit_register_settings() {
 	// Add a section for email settings.
 	add_settings_section(
 		'content_audit_email_settings_section',
-		esc_html__( 'Email Settings', 'content-audit' ),
+		esc_html__( 'Email Settings', 'peppermoney-content-audit' ),
 		'content_audit_email_settings_section_callback',
 		'content_audit_settings'
 	);
@@ -85,7 +85,7 @@ function content_audit_register_settings() {
 	// Add a section for form settings.
 	add_settings_section(
 		'content_audit_form_settings_section',
-		esc_html__( 'Form Settings', 'content-audit' ),
+		esc_html__( 'Form Settings', 'peppermoney-content-audit' ),
 		'content_audit_form_settings_section_callback',
 		'content_audit_settings'
 	);
@@ -93,7 +93,7 @@ function content_audit_register_settings() {
 	// Add a section for display settings.
 	add_settings_section(
 		'content_audit_display_settings_section',
-		esc_html__( 'Display Settings', 'content-audit' ),
+		esc_html__( 'Display Settings', 'peppermoney-content-audit' ),
 		'content_audit_display_settings_section_callback',
 		'content_audit_settings'
 	);
@@ -101,7 +101,7 @@ function content_audit_register_settings() {
 	// Add fields to the email settings section.
 	add_settings_field(
 		'content_audit_notification_email',
-		esc_html__( 'Notification Email', 'content-audit' ),
+		esc_html__( 'Notification Email', 'peppermoney-content-audit' ),
 		'content_audit_notification_email_callback',
 		'content_audit_settings',
 		'content_audit_email_settings_section'
@@ -109,7 +109,7 @@ function content_audit_register_settings() {
 
 	add_settings_field(
 		'content_audit_from_email',
-		esc_html__( 'From Email', 'content-audit' ),
+		esc_html__( 'From Email', 'peppermoney-content-audit' ),
 		'content_audit_from_email_callback',
 		'content_audit_settings',
 		'content_audit_email_settings_section'
@@ -117,7 +117,7 @@ function content_audit_register_settings() {
 
 	add_settings_field(
 		'content_audit_from_name',
-		esc_html__( 'From Name', 'content-audit' ),
+		esc_html__( 'From Name', 'peppermoney-content-audit' ),
 		'content_audit_from_name_callback',
 		'content_audit_settings',
 		'content_audit_email_settings_section'
@@ -126,7 +126,7 @@ function content_audit_register_settings() {
 	// Add fields to the form settings section.
 	add_settings_field(
 		'content_audit_success_message',
-		esc_html__( 'Success Message', 'content-audit' ),
+		esc_html__( 'Success Message', 'peppermoney-content-audit' ),
 		'content_audit_success_message_callback',
 		'content_audit_settings',
 		'content_audit_form_settings_section'
@@ -135,7 +135,7 @@ function content_audit_register_settings() {
 	// Add fields to the display settings section.
 	add_settings_field(
 		'content_audit_show_admin_columns',
-		esc_html__( 'Show Admin Columns', 'content-audit' ),
+		esc_html__( 'Show Admin Columns', 'peppermoney-content-audit' ),
 		'content_audit_show_admin_columns_callback',
 		'content_audit_settings',
 		'content_audit_display_settings_section'
@@ -220,7 +220,7 @@ function content_audit_sanitize_display_settings( $input ) {
  * @return void
  */
 function content_audit_email_settings_section_callback() {
-	echo '<p>' . esc_html__( 'Configure the email settings for content audit notifications.', 'content-audit' ) . '</p>';
+	echo '<p>' . esc_html__( 'Configure the email settings for content audit notifications.', 'peppermoney-content-audit' ) . '</p>';
 }
 
 /**
@@ -229,7 +229,7 @@ function content_audit_email_settings_section_callback() {
  * @return void
  */
 function content_audit_form_settings_section_callback() {
-	echo '<p>' . esc_html__( 'Configure the form settings for content audit submissions.', 'content-audit' ) . '</p>';
+	echo '<p>' . esc_html__( 'Configure the form settings for content audit submissions.', 'peppermoney-content-audit' ) . '</p>';
 }
 
 /**
@@ -238,7 +238,7 @@ function content_audit_form_settings_section_callback() {
  * @return void
  */
 function content_audit_display_settings_section_callback() {
-	echo '<p>' . esc_html__( 'Configure the display settings for content audit.', 'content-audit' ) . '</p>';
+	echo '<p>' . esc_html__( 'Configure the display settings for content audit.', 'peppermoney-content-audit' ) . '</p>';
 }
 
 /**
@@ -251,7 +251,7 @@ function content_audit_notification_email_callback() {
 	$email   = isset( $options['notification_email'] ) ? $options['notification_email'] : get_option( 'admin_email' );
 	?>
 	<input type="email" id="content_audit_notification_email" name="content_audit_email_settings[notification_email]" value="<?php echo esc_attr( $email ); ?>" class="regular-text" />
-	<p class="description"><?php esc_html_e( 'Email address where all content audit notifications will be sent.', 'content-audit' ); ?></p>
+	<p class="description"><?php esc_html_e( 'Email address where all content audit notifications will be sent.', 'peppermoney-content-audit' ); ?></p>
 	<?php
 }
 
@@ -265,7 +265,7 @@ function content_audit_from_email_callback() {
 	$from_email = isset( $options['from_email'] ) ? $options['from_email'] : 'ux@pepper.money';
 	?>
 	<input type="email" id="content_audit_from_email" name="content_audit_email_settings[from_email]" value="<?php echo esc_attr( $from_email ); ?>" class="regular-text" />
-	<p class="description"><?php esc_html_e( 'Email address that will appear in the From field of all content audit emails.', 'content-audit' ); ?></p>
+	<p class="description"><?php esc_html_e( 'Email address that will appear in the From field of all content audit emails.', 'peppermoney-content-audit' ); ?></p>
 	<?php
 }
 
@@ -279,7 +279,7 @@ function content_audit_from_name_callback() {
 	$from_name = isset( $options['from_name'] ) ? $options['from_name'] : 'Pepper Money UX Team';
 	?>
 	<input type="text" id="content_audit_from_name" name="content_audit_email_settings[from_name]" value="<?php echo esc_attr( $from_name ); ?>" class="regular-text" />
-	<p class="description"><?php esc_html_e( 'Name that will appear in the From field of all content audit emails.', 'content-audit' ); ?></p>
+	<p class="description"><?php esc_html_e( 'Name that will appear in the From field of all content audit emails.', 'peppermoney-content-audit' ); ?></p>
 	<?php
 }
 
@@ -293,7 +293,7 @@ function content_audit_success_message_callback() {
 	$success_message = isset( $options['success_message'] ) ? $options['success_message'] : 'Thank you for reviewing this content. Your submission has been recorded.';
 	?>
 	<textarea id="content_audit_success_message" name="content_audit_form_settings[success_message]" rows="3" class="large-text"><?php echo esc_textarea( $success_message ); ?></textarea>
-	<p class="description"><?php esc_html_e( 'Message displayed after a successful form submission.', 'content-audit' ); ?></p>
+	<p class="description"><?php esc_html_e( 'Message displayed after a successful form submission.', 'peppermoney-content-audit' ); ?></p>
 	<?php
 }
 
@@ -307,10 +307,10 @@ function content_audit_show_admin_columns_callback() {
 	$show_admin_columns = isset( $options['show_admin_columns'] ) ? $options['show_admin_columns'] : 'yes';
 	?>
 	<select id="content_audit_show_admin_columns" name="content_audit_display_settings[show_admin_columns]">
-		<option value="yes" <?php selected( $show_admin_columns, 'yes' ); ?>><?php esc_html_e( 'Yes', 'content-audit' ); ?></option>
-		<option value="no" <?php selected( $show_admin_columns, 'no' ); ?>><?php esc_html_e( 'No', 'content-audit' ); ?></option>
+		<option value="yes" <?php selected( $show_admin_columns, 'yes' ); ?>><?php esc_html_e( 'Yes', 'peppermoney-content-audit' ); ?></option>
+		<option value="no" <?php selected( $show_admin_columns, 'no' ); ?>><?php esc_html_e( 'No', 'peppermoney-content-audit' ); ?></option>
 	</select>
-	<p class="description"><?php esc_html_e( 'Show admin columns for content audit.', 'content-audit' ); ?></p>
+	<p class="description"><?php esc_html_e( 'Show admin columns for content audit.', 'peppermoney-content-audit' ); ?></p>
 	<?php
 }
 
@@ -332,7 +332,7 @@ function content_audit_render_settings_page() {
 		add_settings_error(
 			'content_audit_messages',
 			'content_audit_message',
-			esc_html__( 'Settings Saved', 'content-audit' ),
+			esc_html__( 'Settings Saved', 'peppermoney-content-audit' ),
 			'updated'
 		);
 	}
@@ -349,7 +349,7 @@ function content_audit_render_settings_page() {
 			// Output setting sections and their fields.
 			do_settings_sections( 'content_audit_settings' );
 			// Output save settings button.
-			submit_button( esc_html__( 'Save Settings', 'content-audit' ) );
+			submit_button( esc_html__( 'Save Settings', 'peppermoney-content-audit' ) );
 			?>
 		</form>
 	</div>

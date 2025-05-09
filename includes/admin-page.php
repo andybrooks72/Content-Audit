@@ -17,8 +17,8 @@ if ( ! defined( 'WPINC' ) ) {
  */
 function content_audit_register_admin_page() {
 	add_menu_page(
-		esc_html__( 'Content Audit', 'content-audit' ),
-		esc_html__( 'Content Audit', 'content-audit' ),
+		esc_html__( 'Content Audit', 'peppermoney-content-audit' ),
+		esc_html__( 'Content Audit', 'peppermoney-content-audit' ),
 		'manage_options',
 		'content-audit',
 		'content_audit_render_admin_page',
@@ -43,8 +43,8 @@ function content_audit_render_admin_page() {
 	?>
 	<div class="wrap">
 		<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
-		<p><?php esc_html_e( 'Track and manage content review dates for your pages and posts.', 'content-audit' ); ?></p>
-		
+		<p><?php esc_html_e( 'Track and manage content review dates for your pages and posts.', 'peppermoney-content-audit' ); ?></p>
+
 		<div id="content-audit-panel">
 			<?php
 			// Call the function that contains the content audit table.
