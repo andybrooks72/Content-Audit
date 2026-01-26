@@ -10,6 +10,11 @@ if ( ! defined( 'WPINC' ) ) {
 	die;
 }
 
+// Include settings functions if not already included.
+if ( ! function_exists( 'content_audit_get_display_settings' ) ) {
+	require_once __DIR__ . '/admin/settings.php';
+}
+
 /**
  * Insert submission into the database.
  *
@@ -151,12 +156,48 @@ function content_audit_form_shortcode( $atts ) {
 
 	// Get content data.
 	$content = get_post( $content_id );
-	if ( ! $content || ! in_array( $content->post_type, array( 'page', 'post' ), true ) ) {
+	if ( ! $content ) {
+		return '<p>' . esc_html__( 'Content not found.', 'peppermoney-content-audit' ) . '</p>';
+	}
+
+	// Check if content type is in the allowed post types from settings.
+	if ( ! function_exists( 'content_audit_get_post_types_settings' ) ) {
+		require_once __DIR__ . '/admin/settings.php';
+	}
+	$post_types_settings = content_audit_get_post_types_settings();
+	$allowed_post_types  = isset( $post_types_settings['post_types'] ) && is_array( $post_types_settings['post_types'] )
+		? $post_types_settings['post_types']
+		: array( 'page', 'post' );
+
+	if ( ! in_array( $content->post_type, $allowed_post_types, true ) ) {
 		return '<p>' . esc_html__( 'Content not found.', 'peppermoney-content-audit' ) . '</p>';
 	}
 
 	// Get content type.
 	$content_type = $content->post_type;
+
+	/**
+	 * Get the display label for a post type.
+	 *
+	 * @param string $post_type The post type slug.
+	 * @return string The display label for the post type (not escaped).
+	 */
+	function content_audit_get_post_type_label( $post_type ) {
+		if ( 'post' === $post_type ) {
+			return __( 'Post', 'peppermoney-content-audit' );
+		} elseif ( 'page' === $post_type ) {
+			return __( 'Page', 'peppermoney-content-audit' );
+		} else {
+			$post_type_object = get_post_type_object( $post_type );
+			if ( $post_type_object && isset( $post_type_object->labels->singular_name ) ) {
+				return $post_type_object->labels->singular_name;
+			}
+			return __( 'Content', 'peppermoney-content-audit' );
+		}
+	}
+
+	// Get the content type label for display.
+	$content_type_label = content_audit_get_post_type_label( $content_type );
 
 	// Get ACF fields.
 	$content_audit = get_fields( $content_id );
@@ -248,323 +289,60 @@ function content_audit_form_shortcode( $atts ) {
 					get_the_title( $content_id )
 				);
 
-				// Build HTML email message using the same template as audit-panel-updated.php.
+				// Get the relative path from the permalink.
+				$permalink     = get_permalink( $content_id );
+				$site_url      = site_url();
+				$relative_path = str_replace( $site_url, '', $permalink );
+
+				// Get base URL from settings.
+				$display_settings = content_audit_get_display_settings();
+				$base_url         = isset( $display_settings['base_url'] ) ? $display_settings['base_url'] : home_url();
+				// Create the live site URL.
+				$live_site_url = untrailingslashit( $base_url ) . $relative_path;
+
+				// Get submissions URL.
 				$submissions_url = admin_url( 'admin.php?page=content-audit-submissions' );
 
-				// phpcs:disable
-				$message = "
-				<!DOCTYPE html>
-				<html lang='en' xmlns='http://www.w3.org/1999/xhtml' xmlns:v='urn:schemas-microsoft-com:vml'
-					xmlns:o='urn:schemas-microsoft-com:office:office'>
+				// Get email template settings for header image.
+				$email_template_settings = content_audit_get_email_template_settings();
+				$header_image             = isset( $email_template_settings['header_image'] ) && ! empty( $email_template_settings['header_image'] ) 
+					? $email_template_settings['header_image'] 
+					: '';
 
-				<head>
-					<meta charset='utf-8'> <!-- utf-8 works for most cases -->
-					<meta name='viewport' content='width=device-width'> <!-- Forcing initial-scale shouldn't be necessary -->
-					<meta http-equiv='X-UA-Compatible' content='IE=edge'> <!-- Use the latest (edge) version of IE rendering engine -->
-					<meta name='x-apple-disable-message-reformatting'> <!-- Disable auto-scale in iOS 10 Mail entirely -->
-					<meta name='format-detection' content='telephone=no,address=no,email=no,date=no,url=no'>
-					<!-- Tell iOS not to automatically link certain text strings. -->
-					<meta name='color-scheme' content='light'>
-					<meta name='supported-color-schemes' content='light'>
-					<title></title> <!--   The title tag shows in email notifications, like Android 4.4. -->
+				// Get email settings for from name.
+				$email_settings = content_audit_get_email_settings();
+				$from_name      = isset( $email_settings['from_name'] ) ? $email_settings['from_name'] : 'Pepper Money UX Team';
 
-					<!-- What it does: Makes background images in 72ppi Outlook render at correct size. -->
-					<!--[if gte mso 9]>
-					<xml>
-						<o:OfficeDocumentSettings>
-							<o:AllowPNG/>
-							<o:PixelsPerInch>96</o:PixelsPerInch>
-						</o:OfficeDocumentSettings>
-					</xml>
-					<![endif]-->
+				// Get form settings for colors.
+				$form_settings     = content_audit_get_form_settings();
+				$button_bg_color   = isset( $form_settings['button_background_color'] ) ? $form_settings['button_background_color'] : '#d9042b';
+				$button_text_color = isset( $form_settings['button_text_color'] ) ? $form_settings['button_text_color'] : '#ffffff';
+				$link_text_color   = isset( $form_settings['link_text_color'] ) ? $form_settings['link_text_color'] : '#0073aa';
 
-					<!-- Desktop Outlook chokes on web font references and defaults to Times New Roman, so we force a safe fallback font. -->
-					<!--[if mso]>
-					<style>
-						* {
-							font-family: sans-serif !important;
-						}
-					</style>
-					<![endif]-->
+				// Prepare template variables.
+				$template_args = array(
+					'content_id'            => $content_id,
+					'content_title'        => get_the_title( $content_id ),
+					'live_site_url'         => $live_site_url,
+					'stakeholder_name'     => $stakeholder_name,
+					'stakeholder_department' => $stakeholder_department,
+					'needs_changes'        => $needs_changes,
+					'support_ticket_url'   => $support_ticket_url,
+					'submissions_url'      => $submissions_url,
+					'header_image'         => $header_image,
+					'from_name'            => $from_name,
+					'button_bg_color'      => $button_bg_color,
+					'button_text_color'    => $button_text_color,
+					'link_text_color'      => $link_text_color,
+				);
 
-					<!-- CSS Reset : BEGIN -->
-					<style>
-						/* What it does: Tells the email client that only light styles are provided but the client can transform them to dark. A duplicate of meta color-scheme meta tag above. */
-						:root {
-							color-scheme: light;
-							supported-color-schemes: light;
-						}
-
-						/* What it does: Remove spaces around the email design added by some email clients. */
-						/* Beware: It can remove the padding / margin and add a background color to the compose a reply window. */
-						html,
-						body {
-							margin: 0 auto !important;
-							padding: 0 !important;
-							height: 100% !important;
-							width: 100% !important;
-						}
-
-						/* What it does: Stops email clients resizing small text. */
-						* {
-							-ms-text-size-adjust: 100%;
-							-webkit-text-size-adjust: 100%;
-						}
-
-						/* What it does: Centers email on Android 4.4 */
-						div[style*='margin: 16px 0'] {
-							margin: 0 !important;
-						}
-
-						/* What it does: forces Samsung Android mail clients to use the entire viewport */
-						#MessageViewBody,
-						#MessageWebViewDiv {
-							width: 100% !important;
-						}
-
-						/* What it does: Stops Outlook from adding extra spacing to tables. */
-						table,
-						td {
-							mso-table-lspace: 0pt !important;
-							mso-table-rspace: 0pt !important;
-						}
-
-						/* What it does: Fixes webkit padding issue. */
-						table {
-							border-spacing: 0 !important;
-							border-collapse: collapse !important;
-							table-layout: fixed !important;
-							margin: 0 auto !important;
-						}
-
-						/* What it does: Uses a better rendering method when resizing images in IE. */
-						img {
-							-ms-interpolation-mode: bicubic;
-						}
-
-						/* What it does: Prevents Windows 10 Mail from underlining links despite inline CSS. Styles for underlined links should be inline. */
-						a {
-							text-decoration: none;
-						}
-
-						/* What it does: A work-around for email clients meddling in triggered links. */
-						a[x-apple-data-detectors],
-						/* iOS */
-						.unstyle-auto-detected-links a,
-						.aBn {
-							border-bottom: 0 !important;
-							cursor: default !important;
-							color: inherit !important;
-							text-decoration: none !important;
-							font-size: inherit !important;
-							font-family: inherit !important;
-							font-weight: inherit !important;
-							line-height: inherit !important;
-						}
-
-						/* What it does: Prevents Gmail from displaying a download button on large, non-linked images. */
-						.a6S {
-							display: none !important;
-							opacity: 0.01 !important;
-						}
-
-						/* What it does: Prevents Gmail from changing the text color in conversation threads. */
-						.im {
-							color: inherit !important;
-						}
-
-						/* If the above doesn't work, add a .g-img class to any image in question. */
-						img.g-img+div {
-							display: none !important;
-						}
-
-						/* What it does: Removes right gutter in Gmail iOS app: https://github.com/TedGoas/Cerberus/issues/89  */
-						/* Create one of these media queries for each additional viewport size you'd like to fix */
-
-						/* iPhone 4, 4S, 5, 5S, 5C, and 5SE */
-						@media only screen and (min-device-width: 320px) and (max-device-width: 374px) {
-							u~div .email-container {
-								min-width: 320px !important;
-							}
-						}
-
-						/* iPhone 6, 6S, 7, 8, and X */
-						@media only screen and (min-device-width: 375px) and (max-device-width: 413px) {
-							u~div .email-container {
-								min-width: 375px !important;
-							}
-						}
-
-						/* iPhone 6+, 7+, and 8+ */
-						@media only screen and (min-device-width: 414px) {
-							u~div .email-container {
-								min-width: 414px !important;
-							}
-						}
-					</style>
-					<!-- CSS Reset : END -->
-
-					<!-- Progressive Enhancements : BEGIN -->
-					<style>
-						/* What it does: Hover styles for buttons */
-						.button-td,
-						.button-a {
-							transition: all 100ms ease-in;
-						}
-
-						.button-td-primary:hover,
-						.button-a-primary:hover {
-							background: #555555 !important;
-							border-color: #555555 !important;
-						}
-
-						/* Media Queries */
-						@media screen and (max-width: 600px) {
-
-							/* What it does: Adjust typography on small screens to improve readability */
-							.email-container p {
-								font-size: 17px !important;
-							}
-
-						}
-					</style>
-					<!-- Progressive Enhancements : END -->
-
-				</head>
-
-				<body width='100%' style='margin: 0; padding: 0 !important; mso-line-height-rule: exactly;'>
-					<center role='article' aria-roledescription='email' lang='en' style='width: 100%;'>
-						<!--[if mso | IE]>
-						<table role='presentation' border='0' cellpadding='0' cellspacing='0' width='100%'>
-						<tr>
-						<td>
-						<![endif]-->
-
-						<!-- Visually Hidden Preheader Text : BEGIN -->
-						<div style='max-height:0; overflow:hidden; mso-hide:all;' aria-hidden='true'>
-						</div>
-						<!-- Visually Hidden Preheader Text : END -->
-
-						<!-- Preview Text Spacing Hack : BEGIN -->
-						<div
-							style='display: none; font-size: 1px; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden; mso-hide: all; font-family: sans-serif;'>
-							&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;
-						</div>
-						<!-- Preview Text Spacing Hack : END -->
-
-						<div style='max-width: 600px; margin: 0 auto;' class='email-container'>
-							<!--[if mso]>
-							<table align='center' role='presentation' cellspacing='0' cellpadding='0' border='0' width='600'>
-							<tr>
-							<td>
-							<![endif]-->
-
-							<!-- Email Body : BEGIN -->
-							<table align='center' role='presentation' cellspacing='0' cellpadding='0' border='0' width='100%'
-								style='margin: auto;'>
-								<!-- Email Header : BEGIN -->
-								<tr>
-									<td style='padding: 20px 0; text-align: center'>
-										<img src='https://www.pepper.money/wp-content/uploads/pepper-money-color-1052x168-1.png'
-											style='border:0;display:block;outline:none;text-decoration:none;height:auto;width:100%;font-size:13px;'
-											width='200' height='auto' />
-									</td>
-								</tr>
-								<!-- Email Header : END -->
-
-								<!-- 1 Column Text + Button : BEGIN -->
-								<tr>
-									<td style='background-color: #ffffff;'>
-										<table role='presentation' cellspacing='0' cellpadding='0' border='0' width='100%'>
-											<tr>
-												<td
-													style='padding: 20px; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #555555;'>
-													<h1
-														style='margin: 0 0 10px 0; font-family: sans-serif; font-size: 25px; line-height: 30px; color: #333333; font-weight: normal;'>
-														Content Review Submission for \"" . esc_html( get_the_title( $content_id ) ) . "\"</h1>
-													<p style='margin: 0;'>A content review has been submitted by <strong>" . esc_html( $stakeholder_name ) . "</strong>.</p>
-												</td>
-											</tr>
-											<tr>
-												<td
-													style='padding: 20px; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #555555;'>
-													<h2
-														style='margin: 0 0 10px 0; font-family: sans-serif; font-size: 18px; line-height: 22px; color: #333333; font-weight: bold;'>
-														Submission Details:</h2>
-													<table style='border-collapse: collapse; width: 100%; margin-bottom: 20px;'>
-														<tr>
-															<th style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; background-color: #f9f9f9; font-weight: 600; font-family: sans-serif; font-size: 15px; line-height: 20px;'>Page</th>
-															<td style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 15px; line-height: 20px;'><a href='";
-
-				// Get the relative path from the permalink.
-				$permalink = get_permalink( $content_id );
-				$site_url  = site_url();
-				$relative_path = str_replace( $site_url, '', $permalink );
-				// Create the live site URL.
-				$live_site_url = 'https://www.pepper.money' . $relative_path;
-
-				$message .= esc_url( $live_site_url ) . "'>" . esc_html( get_the_title( $content_id ) ) . "</a></td>
-														</tr>
-														<tr>
-															<th style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; background-color: #f9f9f9; font-weight: 600; font-family: sans-serif; font-size: 15px; line-height: 20px;'>Stakeholder</th>
-															<td style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 15px; line-height: 20px;'>" . esc_html( $stakeholder_name ) . "</td>
-														</tr>
-														<tr>
-															<th style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; background-color: #f9f9f9; font-weight: 600; font-family: sans-serif; font-size: 15px; line-height: 20px;'>Department</th>
-															<td style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 15px; line-height: 20px;'>" . esc_html( $stakeholder_department ) . "</td>
-														</tr>
-														<tr>
-															<th style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; background-color: #f9f9f9; font-weight: 600; font-family: sans-serif; font-size: 15px; line-height: 20px;'>Changes Needed</th>
-															<td style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 15px; line-height: 20px; " . ($needs_changes ? 'color: #d9042b; font-weight: bold;' : 'color: #46b450;') . "'>" . ($needs_changes ? esc_html__( 'Yes', 'content-audit' ) : esc_html__( 'No', 'peppermoney-content-audit' )) . "</td>
-														</tr>";
-
-				// Only include support ticket URL if provided.
-				if ( ! empty( $support_ticket_url ) ) {
-					$message .= "
-														<tr>
-															<th style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; background-color: #f9f9f9; font-weight: 600; font-family: sans-serif; font-size: 15px; line-height: 20px;'>Support Ticket</th>
-															<td style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 15px; line-height: 20px;'><a href='" . esc_url( $support_ticket_url ) . "'>" . esc_html__( 'View Ticket', 'peppermoney-content-audit' ) . "</a></td>
-														</tr>";
-				}
-
-				$message .= "
-													</table>
-													<p style='margin: 0 0 10px 0;'>You can view all content audit submissions in the admin dashboard.</p>
-													<p style='margin: 0 0 20px 0;'>Kind regards,<br>Pepper Money UX Team</p>
-													<a href='" . esc_url( $submissions_url ) . "' style='display: block; background-color: #d9042b; color: #fff; padding: 10px 15px; text-decoration: none; border-radius: 3px; margin-top: 15px;'>" . esc_html__( 'View All Submissions', 'peppermoney-content-audit' ) . "</a>
-												</td>
-											</tr>
-										</table>
-									</td>
-								</tr>
-								<!-- 1 Column Text + Button : END -->
-
-							</table>
-							<!-- Email Body : END -->
-
-							<!--[if mso]>
-							</td>
-							</tr>
-							</table>
-							<![endif]-->
-						</div>
-
-						<!--[if mso | IE]>
-						</td>
-						</tr>
-						</table>
-						<![endif]-->
-					</center>
-				</body>
-
-				</html>
-				"; // phpcs:enable
+				// Load email template.
+				$message = content_audit_load_email_template( 'submission-notification', $template_args );
 
 				// Get email settings.
 				$email_settings     = content_audit_get_email_settings();
 				$notification_email = $email_settings['notification_email'];
 				$from_email         = $email_settings['from_email'];
-				$from_name          = $email_settings['from_name'];
 
 				// Set up email headers for HTML.
 				$headers = array(
@@ -583,6 +361,12 @@ function content_audit_form_shortcode( $atts ) {
 	// Display the form.
 	ob_start();
 
+	// Get form settings for colors.
+	$form_settings = content_audit_get_form_settings();
+	$button_bg_color = isset( $form_settings['button_background_color'] ) ? $form_settings['button_background_color'] : '#d9042b';
+	$button_text_color = isset( $form_settings['button_text_color'] ) ? $form_settings['button_text_color'] : '#ffffff';
+	$link_text_color = isset( $form_settings['link_text_color'] ) ? $form_settings['link_text_color'] : '#0073aa';
+
 	if ( $form_submitted ) {
 		echo '<div class="content-audit-success">';
 		echo '<h2>' . esc_html__( 'Thank You!', 'peppermoney-content-audit' ) . '</h2>';
@@ -598,6 +382,24 @@ function content_audit_form_shortcode( $atts ) {
 		}
 
 		?>
+		<style>
+			.content-audit-form-wrapper .content-audit-grid a,
+			.content-audit-form-wrapper a {
+				color: <?php echo esc_attr( $link_text_color ); ?> !important;
+			}
+			.content-audit-form-wrapper #support_ticket_field .elementor-button,
+			.content-audit-form-wrapper .content-audit-submit input[type="submit"] {
+				background-color: <?php echo esc_attr( $button_bg_color ); ?> !important;
+				border-color: <?php echo esc_attr( $button_bg_color ); ?> !important;
+				color: <?php echo esc_attr( $button_text_color ); ?> !important;
+			}
+			.content-audit-form-wrapper #support_ticket_field .elementor-button:hover,
+			.content-audit-form-wrapper #support_ticket_field .elementor-button:focus {
+				background-color: <?php echo esc_attr( $button_text_color ); ?> !important;
+				border-color: <?php echo esc_attr( $button_bg_color ); ?> !important;
+				color: <?php echo esc_attr( $button_bg_color ); ?> !important;
+			}
+		</style>
 		<div class="content-audit-form-wrapper">
 			<div class="content-audit-header">
 				<h2><?php echo esc_html__( 'Content Review Form', 'peppermoney-content-audit' ); ?></h2>
@@ -607,12 +409,9 @@ function content_audit_form_shortcode( $atts ) {
 			<div class="content-audit-page-info">
 				<h3>
 					<?php
-					// Display different heading based on content type.
-					if ( 'page' === $content_type ) {
-						echo esc_html__( 'Page Information', 'peppermoney-content-audit' );
-					} else {
-						echo esc_html__( 'Post Information', 'peppermoney-content-audit' );
-					}
+					// Display heading with content type label.
+					/* translators: %s: Content type label (Post, Page, or custom post type name) */
+					echo esc_html( sprintf( __( '%s Information', 'peppermoney-content-audit' ), $content_type_label ) );
 					?>
 				</h3>
 
@@ -621,12 +420,9 @@ function content_audit_form_shortcode( $atts ) {
 						<p>
 							<strong>
 								<?php
-								// Display different label based on content type.
-								if ( 'page' === $content_type ) {
-									echo esc_html__( 'Page Title:', 'peppermoney-content-audit' );
-								} else {
-									echo esc_html__( 'Post Title:', 'peppermoney-content-audit' );
-								}
+								// Display label with content type label.
+								/* translators: %s: Content type label (Post, Page, or custom post type name) */
+								echo esc_html( sprintf( __( '%s Title:', 'peppermoney-content-audit' ), $content_type_label ) );
 								?>
 							</strong>
 							<span><?php echo esc_html( get_the_title( $content_id ) ); ?></span>
@@ -639,8 +435,12 @@ function content_audit_form_shortcode( $atts ) {
 							$permalink     = get_permalink( $content_id );
 							$site_url      = site_url();
 							$relative_path = str_replace( $site_url, '', $permalink );
+
+							// Get base URL from settings.
+							$display_settings = content_audit_get_display_settings();
+							$base_url         = isset( $display_settings['base_url'] ) ? $display_settings['base_url'] : home_url();
 							// Create the live site URL.
-							$live_site_url = 'https://www.pepper.money' . $relative_path;
+							$live_site_url = untrailingslashit( $base_url ) . $relative_path;
 							?>
 							<a href="<?php echo esc_url( $live_site_url ); ?>" target="_blank"><?php echo esc_url( $live_site_url ); ?></a>
 						</p>
@@ -672,46 +472,34 @@ function content_audit_form_shortcode( $atts ) {
 				<div class="form-field">
 					<legend>
 						<?php
-						// Display different label based on content type.
-						if ( 'page' === $content_type ) {
-							echo esc_html__( 'Page Review Status:', 'peppermoney-content-audit' );
-						} else {
-							echo esc_html__( 'Post Review Status:', 'peppermoney-content-audit' );
-						}
+						// Display label with content type label.
+						/* translators: %s: Content type label (Post, Page, or custom post type name) */
+						echo esc_html( sprintf( __( '%s Review Status:', 'peppermoney-content-audit' ), $content_type_label ) );
 						?>
 					</legend>
 
 					<p>
 						<strong>
 							<?php
-								// Display different text based on content type.
-							if ( 'page' === $content_type ) {
-								echo esc_html__( 'If the page is still up to date or if it needs editing or removing:', 'peppermoney-content-audit' );
-							} else {
-								echo esc_html__( 'If the post is still up to date or if it needs editing or removing:', 'peppermoney-content-audit' );
-							}
+							// Display text with content type label.
+							/* translators: %s: Content type label (Post, Page, or custom post type name) */
+							echo esc_html( sprintf( __( 'If the %s is still up to date or if it needs editing or removing:', 'peppermoney-content-audit' ), strtolower( $content_type_label ) ) );
 							?>
 						</strong>
 					</p>
 					<ul>
 						<li>
 							<?php
-							// Display different text based on content type.
-							if ( 'page' === $content_type ) {
-								echo esc_html__( 'If the page is still up to date confirm this by selecting "Content is accurate and up-to-date"', 'peppermoney-content-audit' );
-							} else {
-								echo esc_html__( 'If the post is still up to date confirm this by selecting "Content is accurate and up-to-date"', 'peppermoney-content-audit' );
-							}
+							// Display text with content type label.
+							/* translators: %s: Content type label (Post, Page, or custom post type name) */
+							echo esc_html( sprintf( __( 'If the %s is still up to date confirm this by selecting "Content is accurate and up-to-date"', 'peppermoney-content-audit' ), strtolower( $content_type_label ) ) );
 							?>
 						</li>
 						<li>
 							<?php
-							// Display different text based on content type.
-							if ( 'page' === $content_type ) {
-								echo esc_html__( 'If the page needs changing/removing confirm this by selecting "Content needs changes / I have raised an SD Ticket"', 'peppermoney-content-audit' );
-							} else {
-								echo esc_html__( 'If the post needs changing/removing confirm this by selecting "Content needs changes / I have raised an SD Ticket"', 'peppermoney-content-audit' );
-							}
+							// Display text with content type label.
+							/* translators: %s: Content type label (Post, Page, or custom post type name) */
+							echo esc_html( sprintf( __( 'If the %s needs changing/removing confirm this by selecting "Content needs changes / I have raised an Support Ticket"', 'peppermoney-content-audit' ), strtolower( $content_type_label ) ) );
 							?>
 						</li>
 					</ul>
@@ -724,19 +512,28 @@ function content_audit_form_shortcode( $atts ) {
 
 							<label for="needs_changes_yes" class="content-audit-radio-label needs-changes">
 								<input type="radio" name="needs_changes" id="needs_changes_yes" value="1" />
-								<span><?php echo esc_html__( 'Content needs changes / I have raised an SD Ticket', 'peppermoney-content-audit' ); ?></span>
+								<span><?php echo esc_html__( 'Content needs changes / I have raised an Support Ticket', 'peppermoney-content-audit' ); ?></span>
 							</label>
 						</div>
 					</fieldset>
 				</div>
 
 				<div id="support_ticket_field">
-					<p>
-						<a class="button elementor-button" href="https://helpdesk.pepper.money:8080/homepage.dp?" target="_blank"><?php echo esc_html__( 'Raise an SD Ticket', 'peppermoney-content-audit' ); ?></a>
-					</p>
-					<label for="support_ticket_url"><?php echo esc_html__( 'SD Ticket URL:', 'peppermoney-content-audit' ); ?></label>
+					<?php
+					// Get support ticket URL from settings.
+					$display_settings   = content_audit_get_display_settings();
+					$support_ticket_url = isset( $display_settings['support_ticket_url'] ) ? $display_settings['support_ticket_url'] : '';
+					if ( ! empty( $support_ticket_url ) ) :
+						?>
+						<p>
+							<a class="button elementor-button" href="<?php echo esc_url( $support_ticket_url ); ?>" target="_blank"><?php echo esc_html__( 'Raise an Support Ticket', 'peppermoney-content-audit' ); ?></a>
+						</p>
+						<?php
+					endif;
+					?>
+					<label for="support_ticket_url"><?php echo esc_html__( 'Support Ticket URL:', 'peppermoney-content-audit' ); ?></label>
 					<input type="url" name="support_ticket_url" id="support_ticket_url" class="regular-text" placeholder="https://" />
-					<p class="description"><?php echo esc_html__( 'If you have created a SD Ticket for the required changes, please enter the URL to the ticket here.', 'peppermoney-content-audit' ); ?></p>
+					<p class="description"><?php echo esc_html__( 'If you have created a Support Ticket for the required changes, please enter the URL to the ticket here.', 'peppermoney-content-audit' ); ?></p>
 				</div>
 
 				<div class="content-audit-submit">

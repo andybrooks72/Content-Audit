@@ -26,7 +26,7 @@ require_once plugin_dir_path( __FILE__ ) . 'includes/admin-page.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/audit-panel-updated.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/form-handler.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/submissions.php';
-require_once plugin_dir_path( __FILE__ ) . 'includes/settings.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/admin/settings.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/helper-functions.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/admin-columns.php';
 
@@ -178,6 +178,7 @@ function content_audit_uninstall() {
 	delete_option( 'content_audit_email_settings' );
 	delete_option( 'content_audit_form_settings' );
 	delete_option( 'content_audit_display_settings' );
+	delete_option( 'content_audit_post_types_settings' );
 
 	// Delete all post meta related to content audit.
 	// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL

@@ -12,7 +12,12 @@ if ( ! defined( 'WPINC' ) ) {
 
 // Include settings functions if not already included.
 if ( ! function_exists( 'content_audit_get_display_settings' ) ) {
-	require_once __DIR__ . '/settings.php';
+	require_once __DIR__ . '/admin/settings.php';
+}
+
+// Include post types settings functions if not already included.
+if ( ! function_exists( 'content_audit_get_post_types_settings' ) ) {
+	require_once __DIR__ . '/admin/settings.php';
 }
 
 /**
@@ -29,7 +34,7 @@ function content_audit_should_display_admin_columns() {
 }
 
 /**
- * Add custom columns to post and page admin screens.
+ * Add custom columns to admin screens for selected post types.
  *
  * @param array $columns Array of column names.
  * @return array Modified array of column names.
@@ -57,8 +62,36 @@ function content_audit_add_columns( $columns ) {
 	return $new_columns;
 }
 
-add_filter( 'manage_post_posts_columns', 'content_audit_add_columns' );
-add_filter( 'manage_page_posts_columns', 'content_audit_add_columns' );
+/**
+ * Dynamically register admin column filters for selected post types.
+ *
+ * @return void
+ */
+function content_audit_register_admin_column_filters() {
+	// Check if admin columns should be displayed.
+	if ( ! content_audit_should_display_admin_columns() ) {
+		return;
+	}
+
+	// Get selected post types from settings.
+	$post_types_settings = content_audit_get_post_types_settings();
+	$selected_post_types = isset( $post_types_settings['post_types'] ) && is_array( $post_types_settings['post_types'] )
+		? $post_types_settings['post_types']
+		: array( 'page', 'post' );
+
+	// Register filters for each selected post type.
+	foreach ( $selected_post_types as $post_type ) {
+		// Add columns filter.
+		add_filter( "manage_{$post_type}_posts_columns", 'content_audit_add_columns' );
+
+		// Add custom column content action.
+		add_action( "manage_{$post_type}_posts_custom_column", 'content_audit_custom_column_content', 10, 2 );
+
+		// Add sortable columns filter.
+		add_filter( "manage_edit-{$post_type}_sortable_columns", 'content_audit_sortable_columns' );
+	}
+}
+add_action( 'admin_init', 'content_audit_register_admin_column_filters' );
 
 /**
  * Display custom column content.
@@ -133,9 +166,6 @@ function content_audit_custom_column_content( $column_name, $post_id ) {
 	}
 }
 
-add_action( 'manage_posts_custom_column', 'content_audit_custom_column_content', 10, 2 );
-add_action( 'manage_pages_custom_column', 'content_audit_custom_column_content', 10, 2 );
-
 /**
  * Make the Next Audit Date column sortable.
  *
@@ -154,9 +184,6 @@ function content_audit_sortable_columns( $columns ) {
 
 	return $columns;
 }
-
-add_filter( 'manage_edit-post_sortable_columns', 'content_audit_sortable_columns' );
-add_filter( 'manage_edit-page_sortable_columns', 'content_audit_sortable_columns' );
 
 /**
  * Modify the query to sort by the next audit date.

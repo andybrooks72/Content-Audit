@@ -11,6 +11,69 @@ if ( ! defined( 'WPINC' ) ) {
 }
 
 /**
+ * Locate email template file.
+ *
+ * Checks theme directory first, then falls back to plugin template.
+ * Theme template path: your-theme/pm-content-audit/email/{template-name}.php
+ * Plugin template path: templates/email/{template-name}.php
+ *
+ * @param string $template_name The template name (without .php extension).
+ * @return string|false The template path if found, false otherwise.
+ */
+function content_audit_locate_email_template( $template_name ) {
+	// Check theme directory first.
+	$theme_template = get_template_directory() . '/pm-content-audit/email/' . $template_name . '.php';
+	if ( file_exists( $theme_template ) ) {
+		return $theme_template;
+	}
+
+	// Check child theme directory if using child theme.
+	if ( is_child_theme() ) {
+		$child_theme_template = get_stylesheet_directory() . '/pm-content-audit/email/' . $template_name . '.php';
+		if ( file_exists( $child_theme_template ) ) {
+			return $child_theme_template;
+		}
+	}
+
+	// Fall back to plugin template.
+	$plugin_template = plugin_dir_path( dirname( __FILE__ ) ) . 'templates/email/' . $template_name . '.php';
+	if ( file_exists( $plugin_template ) ) {
+		return $plugin_template;
+	}
+
+	return false;
+}
+
+/**
+ * Load email template with variables.
+ *
+ * @param string $template_name The template name (without .php extension).
+ * @param array  $args           Array of variables to pass to the template.
+ * @return string The rendered template output.
+ */
+function content_audit_load_email_template( $template_name, $args = array() ) {
+	$template_path = content_audit_locate_email_template( $template_name );
+
+	if ( ! $template_path ) {
+		return '';
+	}
+
+	// Extract variables for use in template.
+	extract( $args ); // phpcs:ignore WordPress.PHP.DontExtract.extract_extract
+
+	// Start output buffering.
+	ob_start();
+
+	// Include the template file.
+	include $template_path;
+
+	// Get the buffered content.
+	$output = ob_get_clean();
+
+	return $output;
+}
+
+/**
  * Update the email template function to include form URL.
  *
  * @param string   $content_title The content title.
@@ -27,17 +90,18 @@ function content_audit_get_email_template_with_form( $content_title, $content_ur
 		$form_url = content_audit_generate_form_url( $content_id );
 	}
 
-	// Get the content type (post or page).
+	// Get the content type from the post.
 	$content_type = 'content';
 	if ( $content_id ) {
 		$post = get_post( $content_id );
-		if ( $post && in_array( $post->post_type, array( 'post', 'page' ), true ) ) {
+		if ( $post ) {
 			$content_type = $post->post_type;
 		}
 	}
 
-	// Create a properly capitalized content type label.
-	$content_type_label = ucfirst( $content_type );
+	// Get post type object for proper label.
+	$post_type_obj      = get_post_type_object( $content_type );
+	$content_type_label = $post_type_obj ? $post_type_obj->labels->singular_name : ucfirst( $content_type );
 
 	// Get the original template.
 	$message = content_audit_get_email_template( $content_title, $content_url, $date, $format_out );
@@ -85,11 +149,11 @@ function content_audit_filter_email_template( $message, $content_title, $content
 		$form_url = content_audit_generate_form_url( $content_id );
 	}
 
-	// Get the content type (post or page).
+	// Get the content type from the post.
 	$content_type = 'content';
 	if ( $content_id ) {
 		$post = get_post( $content_id );
-		if ( $post && in_array( $post->post_type, array( 'post', 'page' ), true ) ) {
+		if ( $post ) {
 			$content_type = $post->post_type;
 		}
 	}
