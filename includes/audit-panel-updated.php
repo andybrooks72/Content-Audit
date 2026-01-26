@@ -10,6 +10,18 @@ if ( ! defined( 'WPINC' ) ) {
 	die;
 }
 
+// Include settings functions if not already included.
+if ( ! function_exists( 'content_audit_get_post_types_settings' ) ) {
+	require_once __DIR__ . '/admin/settings.php';
+}
+if ( ! function_exists( 'content_audit_get_display_settings' ) ) {
+	require_once __DIR__ . '/admin/settings.php';
+}
+// Include helper functions if not already included.
+if ( ! function_exists( 'content_audit_load_email_template' ) ) {
+	require_once __DIR__ . '/helper-functions.php';
+}
+
 /**
  * Display the content audit table.
  *
@@ -23,47 +35,55 @@ function content_audit_display_table() {
 	// Get filter value from URL parameter, default to 30days.
 	$filter = isset( $_GET['filter'] ) ? sanitize_text_field( wp_unslash( $_GET['filter'] ) ) : '30days';
 
-	// Get content type from URL parameter, default to pages.
-	$content_type = isset( $_GET['content_type'] ) ? sanitize_text_field( wp_unslash( $_GET['content_type'] ) ) : 'pages';
+	// Get selected post types from settings.
+	$post_types_settings = content_audit_get_post_types_settings();
+	$selected_post_types = isset( $post_types_settings['post_types'] ) && is_array( $post_types_settings['post_types'] )
+		? $post_types_settings['post_types']
+		: array( 'page', 'post' );
 
-	// Ensure content_type is valid.
-	if ( ! in_array( $content_type, array( 'pages', 'posts' ), true ) ) {
-		$content_type = 'pages';
+	// Get content type from URL parameter, default to first selected post type.
+	$content_type = isset( $_GET['content_type'] ) ? sanitize_text_field( wp_unslash( $_GET['content_type'] ) ) : $selected_post_types[0];
+
+	// Ensure content_type is valid (must be one of the selected post types).
+	if ( ! in_array( $content_type, $selected_post_types, true ) ) {
+		$content_type = $selected_post_types[0];
 	}
 
-	// Add tabs for switching between pages and posts.
+	// Get post type objects for labels.
+	$post_type_objects = array();
+	foreach ( $selected_post_types as $post_type_slug ) {
+		$post_type_obj = get_post_type_object( $post_type_slug );
+		if ( $post_type_obj ) {
+			$post_type_objects[ $post_type_slug ] = $post_type_obj;
+		}
+	}
+
+	// Add tabs for switching between selected post types.
 	?>
 	<div class="nav-tab-wrapper">
-		<a href="
-		<?php
-		echo esc_url(
-			add_query_arg(
-				array(
-					'page'         => 'content-audit',
-					'content_type' => 'pages',
-					'filter'       => $filter,
+		<?php foreach ( $selected_post_types as $post_type_slug ) : ?>
+			<?php
+			$post_type_obj = isset( $post_type_objects[ $post_type_slug ] ) ? $post_type_objects[ $post_type_slug ] : null;
+			if ( ! $post_type_obj ) {
+				continue;
+			}
+			?>
+			<a href="
+			<?php
+			echo esc_url(
+				add_query_arg(
+					array(
+						'page'         => 'content-audit',
+						'content_type' => $post_type_slug,
+						'filter'       => $filter,
+					)
 				)
-			)
-		);
-		?>
-					" class="nav-tab <?php echo 'pages' === $content_type ? 'nav-tab-active' : ''; ?>">
-			<?php esc_html_e( 'Pages', 'peppermoney-content-audit' ); ?>
-		</a>
-		<a href="
-		<?php
-		echo esc_url(
-			add_query_arg(
-				array(
-					'page'         => 'content-audit',
-					'content_type' => 'posts',
-					'filter'       => $filter,
-				)
-			)
-		);
-		?>
-					" class="nav-tab <?php echo 'posts' === $content_type ? 'nav-tab-active' : ''; ?>">
-			<?php esc_html_e( 'Posts', 'peppermoney-content-audit' ); ?>
-		</a>
+			);
+			?>
+						" class="nav-tab <?php echo $content_type === $post_type_slug ? 'nav-tab-active' : ''; ?>">
+				<?php echo esc_html( $post_type_obj->labels->name ); ?>
+			</a>
+		<?php endforeach; ?>
 	</div>
 
 	<!-- Add filter dropdown -->
@@ -87,10 +107,14 @@ function content_audit_display_table() {
 	</div>
 	<?php
 
+	// Get post type object for current content type.
+	$current_post_type_obj = get_post_type_object( $content_type );
+	$content_type_label    = $current_post_type_obj ? $current_post_type_obj->labels->singular_name : ucfirst( $content_type );
+
 	echo '<table class="content-audit-table">';
 	echo '<thead>';
 	echo '<tr>';
-	echo '<th>' . esc_html( 'posts' === $content_type ? 'Post Title' : 'Page Title' ) . '</th>';
+	echo '<th>' . esc_html( sprintf( '%s Title', $content_type_label ) ) . '</th>';
 	echo '<th>Stakeholder Name</th>';
 	echo '<th>Stakeholder Dept</th>';
 	echo '<th>Email</th>';
@@ -246,7 +270,7 @@ function content_audit_display_table() {
 
 	// Query arguments.
 	$args = array(
-		'post_type'      => 'posts' === $content_type ? 'post' : 'page',
+		'post_type'      => $content_type,
 		'post_status'    => 'publish',
 		'posts_per_page' => $posts_per_page,
 		'meta_query'     => $meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
@@ -268,11 +292,15 @@ function content_audit_display_table() {
 				continue;
 			}
 
-			$page_title        = get_the_title();
-			$permalink         = get_the_permalink();
-			$site_url          = site_url();
-			$relative_path     = str_replace( $site_url, '', $permalink );
-			$page_url          = 'https://www.pepper.money' . $relative_path;
+			$page_title    = get_the_title();
+			$permalink     = get_the_permalink();
+			$site_url      = site_url();
+			$relative_path = str_replace( $site_url, '', $permalink );
+
+			// Get base URL from settings.
+			$display_settings  = content_audit_get_display_settings();
+			$base_url          = isset( $display_settings['base_url'] ) ? $display_settings['base_url'] : home_url();
+			$page_url          = untrailingslashit( $base_url ) . $relative_path;
 			$stakeholder_name  = $content_audit['stakeholder_name'];
 			$stakeholder_dept  = $content_audit['stakeholder_department'];
 			$stakeholder_email = $content_audit['stakeholder_email'];
@@ -321,16 +349,13 @@ function content_audit_display_table() {
 
 							// Get the actual post type from the database.
 							$post_obj         = get_post( $page_id );
-							$actual_post_type = $post_obj ? $post_obj->post_type : 'page';
+							$actual_post_type = $post_obj ? $post_obj->post_type : $content_type;
+							$post_type_obj    = get_post_type_object( $actual_post_type );
+							$type_label       = $post_type_obj ? $post_type_obj->labels->singular_name : ucfirst( $actual_post_type );
 
 							// Use proper translation strings for different content types.
-							if ( 'post' === $actual_post_type ) {
-								/* translators: %s: post title */
-								$subject = sprintf( esc_html__( 'The following post requires your attention: %s', 'peppermoney-content-audit' ), get_the_title() );
-							} else {
-								/* translators: %s: page title */
-								$subject = sprintf( esc_html__( 'The following page requires your attention: %s', 'peppermoney-content-audit' ), get_the_title() );
-							}
+							/* translators: %1$s: content type label, %2$s: content title */
+							$subject = sprintf( esc_html__( 'The following %1$s requires your attention: %2$s', 'peppermoney-content-audit' ), strtolower( $type_label ), get_the_title() );
 
 							// Set up email headers.
 							$admin_email = get_option( 'admin_email' );
@@ -374,10 +399,12 @@ function content_audit_display_table() {
 
 		endwhile;
 
-	elseif ( 'posts' === $content_type ) :
-			echo '<tr><td colspan="6">' . esc_html__( 'No posts found matching the selected criteria.', 'peppermoney-content-audit' ) . '</td></tr>';
-		else :
-			echo '<tr><td colspan="6">' . esc_html__( 'No pages found matching the selected criteria.', 'peppermoney-content-audit' ) . '</td></tr>';
+	else :
+		// Get post type object for current content type.
+		$current_post_type_obj = get_post_type_object( $content_type );
+		$content_type_label    = $current_post_type_obj ? $current_post_type_obj->labels->name : ucfirst( $content_type );
+		/* translators: %s: content type label */
+		echo '<tr><td colspan="6">' . esc_html( sprintf( __( 'No %s found matching the selected criteria.', 'peppermoney-content-audit' ), strtolower( $content_type_label ) ) ) . '</td></tr>';
 	endif;
 
 		wp_reset_postdata();
@@ -403,313 +430,59 @@ function content_audit_get_email_template( $page_title, $page_url, $date, $forma
 		$form_url = content_audit_generate_form_url( $page_id );
 	}
 
-	// Get the content type (post or page).
+	// Get support ticket URL from settings.
+	$display_settings   = content_audit_get_display_settings();
+	$support_ticket_url = isset( $display_settings['support_ticket_url'] ) ? $display_settings['support_ticket_url'] : '';
+
+	// Get the content type from the post.
 	$content_type = 'content';
 	if ( $page_id ) {
 		$post = get_post( $page_id );
-		if ( $post && in_array( $post->post_type, array( 'post', 'page' ), true ) ) {
+		if ( $post ) {
 			$content_type = $post->post_type;
 		}
 	}
 
-	// Create a properly capitalized content type label.
-	$content_type_label = ucfirst( $content_type );
+	// Get post type object for proper label.
+	$post_type_obj      = get_post_type_object( $content_type );
+	$content_type_label = $post_type_obj ? $post_type_obj->labels->singular_name : ucfirst( $content_type );
 
-	// phpcs:disable
-	$message = "
-	<!DOCTYPE html>
-	<html lang='en' xmlns='http://www.w3.org/1999/xhtml' xmlns:v='urn:schemas-microsoft-com:vml'
-		xmlns:o='urn:schemas-microsoft-com:office:office'>
+	// Get email template settings for header image.
+	$email_template_settings = content_audit_get_email_template_settings();
+	$header_image           = isset( $email_template_settings['header_image'] ) && ! empty( $email_template_settings['header_image'] ) 
+		? $email_template_settings['header_image'] 
+		: '';
 
-	<head>
-		<meta charset='utf-8'> <!-- utf-8 works for most cases -->
-		<meta name='viewport' content='width=device-width'> <!-- Forcing initial-scale shouldn't be necessary -->
-		<meta http-equiv='X-UA-Compatible' content='IE=edge'> <!-- Use the latest (edge) version of IE rendering engine -->
-		<meta name='x-apple-disable-message-reformatting'> <!-- Disable auto-scale in iOS 10 Mail entirely -->
-		<meta name='format-detection' content='telephone=no,address=no,email=no,date=no,url=no'>
-		<!-- Tell iOS not to automatically link certain text strings. -->
-		<meta name='color-scheme' content='light'>
-		<meta name='supported-color-schemes' content='light'>
-		<title></title> <!--   The title tag shows in email notifications, like Android 4.4. -->
+	// Get email settings for from name.
+	$email_settings = content_audit_get_email_settings();
+	$from_name      = isset( $email_settings['from_name'] ) ? $email_settings['from_name'] : 'Pepper Money UX Team';
 
-		<!-- What it does: Makes background images in 72ppi Outlook render at correct size. -->
-		<!--[if gte mso 9]>
-							<xml>
-								<o:OfficeDocumentSettings>
-									<o:AllowPNG/>
-									<o:PixelsPerInch>96</o:PixelsPerInch>
-								</o:OfficeDocumentSettings>
-							</xml>
-							<![endif]-->
+	// Get form settings for colors.
+	$form_settings     = content_audit_get_form_settings();
+	$button_bg_color   = isset( $form_settings['button_background_color'] ) ? $form_settings['button_background_color'] : '#d9042b';
+	$button_text_color = isset( $form_settings['button_text_color'] ) ? $form_settings['button_text_color'] : '#ffffff';
+	$link_text_color   = isset( $form_settings['link_text_color'] ) ? $form_settings['link_text_color'] : '#0073aa';
 
-		<!-- Web Font / @font-face : BEGIN -->
-		<!-- NOTE: If web fonts are not required, lines 23 - 41 can be safely removed. -->
+	// Format the review date.
+	$review_date = $date->format( $format_out );
 
-		<!-- Desktop Outlook chokes on web font references and defaults to Times New Roman, so we force a safe fallback font. -->
-		<!--[if mso]>
-								<style>
-									* {
-										font-family: sans-serif !important;
-									}
-								</style>
-							<![endif]-->
+	// Prepare template variables.
+	$template_args = array(
+		'page_title'         => $page_title,
+		'page_url'           => $page_url,
+		'content_type_label' => $content_type_label,
+		'form_url'           => $form_url,
+		'support_ticket_url' => $support_ticket_url,
+		'review_date'        => $review_date,
+		'header_image'       => $header_image,
+		'from_name'          => $from_name,
+		'button_bg_color'    => $button_bg_color,
+		'button_text_color'  => $button_text_color,
+		'link_text_color'    => $link_text_color,
+	);
 
-		<!-- All other clients get the webfont reference; some will render the font and others will silently fail to the fallbacks. More on that here: http://stylecampaign.com/blog/2015/02/webfont-support-in-email/ -->
-		<!--[if !mso]><!-->
-		<!-- insert web font reference, eg: <link href='https://fonts.googleapis.com/css?family=Ubuntu:300,400,500,700' rel='stylesheet' type='text/css'> -->
-		<!--<![endif]-->
-
-		<!-- Web Font / @font-face : END -->
-
-		<!-- CSS Reset : BEGIN -->
-		<style>
-			/* What it does: Tells the email client that only light styles are provided but the client can transform them to dark. A duplicate of meta color-scheme meta tag above. */
-			:root {
-				color-scheme: light;
-				supported-color-schemes: light;
-			}
-
-			/* What it does: Remove spaces around the email design added by some email clients. */
-			/* Beware: It can remove the padding / margin and add a background color to the compose a reply window. */
-			html,
-			body {
-				margin: 0 auto !important;
-				padding: 0 !important;
-				height: 100% !important;
-				width: 100% !important;
-			}
-
-			/* What it does: Stops email clients resizing small text. */
-			* {
-				-ms-text-size-adjust: 100%;
-				-webkit-text-size-adjust: 100%;
-			}
-
-			/* What it does: Centers email on Android 4.4 */
-			div[style*='margin: 16px 0'] {
-				margin: 0 !important;
-			}
-
-			/* What it does: forces Samsung Android mail clients to use the entire viewport */
-			#MessageViewBody,
-			#MessageWebViewDiv {
-				width: 100% !important;
-			}
-
-			/* What it does: Stops Outlook from adding extra spacing to tables. */
-			table,
-			td {
-				mso-table-lspace: 0pt !important;
-				mso-table-rspace: 0pt !important;
-			}
-
-			/* What it does: Fixes webkit padding issue. */
-			table {
-				border-spacing: 0 !important;
-				border-collapse: collapse !important;
-				table-layout: fixed !important;
-				margin: 0 auto !important;
-			}
-
-			/* What it does: Uses a better rendering method when resizing images in IE. */
-			img {
-				-ms-interpolation-mode: bicubic;
-			}
-
-			/* What it does: Prevents Windows 10 Mail from underlining links despite inline CSS. Styles for underlined links should be inline. */
-			a {
-				text-decoration: none;
-			}
-
-			/* What it does: A work-around for email clients meddling in triggered links. */
-			a[x-apple-data-detectors],
-			/* iOS */
-			.unstyle-auto-detected-links a,
-			.aBn {
-				border-bottom: 0 !important;
-				cursor: default !important;
-				color: inherit !important;
-				text-decoration: none !important;
-				font-size: inherit !important;
-				font-family: inherit !important;
-				font-weight: inherit !important;
-				line-height: inherit !important;
-			}
-
-			/* What it does: Prevents Gmail from displaying a download button on large, non-linked images. */
-			.a6S {
-				display: none !important;
-				opacity: 0.01 !important;
-			}
-
-			/* What it does: Prevents Gmail from changing the text color in conversation threads. */
-			.im {
-				color: inherit !important;
-			}
-
-			/* If the above doesn't work, add a .g-img class to any image in question. */
-			img.g-img+div {
-				display: none !important;
-			}
-
-			/* What it does: Removes right gutter in Gmail iOS app: https://github.com/TedGoas/Cerberus/issues/89  */
-			/* Create one of these media queries for each additional viewport size you'd like to fix */
-
-			/* iPhone 4, 4S, 5, 5S, 5C, and 5SE */
-			@media only screen and (min-device-width: 320px) and (max-device-width: 374px) {
-				u~div .email-container {
-					min-width: 320px !important;
-				}
-			}
-
-			/* iPhone 6, 6S, 7, 8, and X */
-			@media only screen and (min-device-width: 375px) and (max-device-width: 413px) {
-				u~div .email-container {
-					min-width: 375px !important;
-				}
-			}
-
-			/* iPhone 6+, 7+, and 8+ */
-			@media only screen and (min-device-width: 414px) {
-				u~div .email-container {
-					min-width: 414px !important;
-				}
-			}
-		</style>
-		<!-- CSS Reset : END -->
-
-		<!-- Progressive Enhancements : BEGIN -->
-		<style>
-			/* What it does: Hover styles for buttons */
-			.button-td,
-			.button-a {
-				transition: all 100ms ease-in;
-			}
-
-			.button-td-primary:hover,
-			.button-a-primary:hover {
-				background: #555555 !important;
-				border-color: #555555 !important;
-			}
-
-			/* Media Queries */
-			@media screen and (max-width: 600px) {
-
-				/* What it does: Adjust typography on small screens to improve readability */
-				.email-container p {
-					font-size: 17px !important;
-				}
-
-			}
-		</style>
-		<!-- Progressive Enhancements : END -->
-
-	</head>
-	<!--
-							The email background color (#222222) is defined in three places:
-							1. body tag: for most email clients
-							2. center tag: for Gmail and Inbox mobile apps and web versions of Gmail, GSuite, Inbox, Yahoo, AOL, Libero, Comcast, freenet, Mail.ru, Orange.fr
-							3. mso conditional: For Windows 10 Mail
-						-->
-
-	<body width='100%' style='margin: 0; padding: 0 !important; mso-line-height-rule: exactly;'>
-		<center role='article' aria-roledescription='email' lang='en' style='width: 100%;'>
-			<!--[if mso | IE]>
-							<table role='presentation' border='0' cellpadding='0' cellspacing='0' width='100%'>
-							<tr>
-							<td>
-							<![endif]-->
-
-			<!-- Visually Hidden Preheader Text : BEGIN -->
-			<div style='max-height:0; overflow:hidden; mso-hide:all;' aria-hidden='true'>
-			</div>
-			<!-- Visually Hidden Preheader Text : END -->
-
-			<!-- Create white space after the desired preview text so email clients don't pull other distracting text into the inbox preview. Extend as necessary. -->
-			<!-- Preview Text Spacing Hack : BEGIN -->
-			<div
-				style='display: none; font-size: 1px; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden; mso-hide: all; font-family: sans-serif;'>
-				&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;
-			</div>
-			<!-- Preview Text Spacing Hack : END -->
-
-			<!--
-								Set the email width. Defined in two places:
-								1. max-width for all clients except Desktop Windows Outlook, allowing the email to squish on narrow but never go wider than 600px.
-								2. MSO tags for Desktop Windows Outlook enforce a 600px width.
-							-->
-			<div style='max-width: 600px; margin: 0 auto;' class='email-container'>
-				<!--[if mso]>
-								<table align='center' role='presentation' cellspacing='0' cellpadding='0' border='0' width='600'>
-								<tr>
-								<td>
-								<![endif]-->
-
-				<!-- Email Body : BEGIN -->
-				<table align='center' role='presentation' cellspacing='0' cellpadding='0' border='0' width='100%'
-					style='margin: auto;'>
-					<!-- Email Header : BEGIN -->
-					<tr>
-						<td style='padding: 20px 0; text-align: center'>
-							<img src='https://www.pepper.money/wp-content/uploads/pepper-money-color-1052x168-1.png'
-								style='border:0;display:block;outline:none;text-decoration:none;height:auto;width:100%;font-size:13px;'
-								width='200' height='auto' />
-						</td>
-					</tr>
-					<!-- Email Header : END -->
-
-					<!-- 1 Column Text + Button : BEGIN -->
-					<tr>
-						<td style='background-color: #ffffff;'>
-							<table role='presentation' cellspacing='0' cellpadding='0' border='0' width='100%'>
-								<tr>
-									<td
-										style='padding: 20px; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #555555;'>
-										<h1
-											style='margin: 0 0 10px 0; font-family: sans-serif; font-size: 22px; line-height: 30px; color: #333333; font-weight: normal;'>
-											You have been assigned a $content_type_label to review: <a href='$page_url'>$page_title</a></h1>
-										<p style='margin: 0 0 10px 0;'>Please click on the link above to check if the post is still up to date or if it needs editing or removing</p>
-										<p style='margin: 0 0 10px 0;'>If you have any issues accessing the link, email the UX team on <a href='mailto:ux@pepper.money'>ux@pepper.money</a> or contact a member of the team</p>
-									</td>
-								</tr>
-								<tr>
-									<td
-										style='padding: 20px; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #555555;'>
-										<p style='margin: 0 0 10px 0;>Once you've finished your review</p>
-										<ul style='padding: 0; margin: 0 0 10px 0; list-style-type: disc;'>
-											<li style='margin:0 0 10px 20px;' class='list-item-first'>If the post is still up to date confirm this by completing the <a href='$form_url' style='color: #0073aa; text-decoration: underline; font-weight: bold; background-color: #f0f8ff; padding: 3px 6px; border-radius: 3px;'>Content Review Form</a>.</li>
-											" . ($form_url ? "<li style='margin:0 0 10px 20px;'>If the post needs editing or removing raise an <a href='https://helpdesk.pepper.money:8080/homepage.dp?' style='color: #0073aa; text-decoration: underline; font-weight: bold; background-color: #f0f8ff; padding: 3px 6px; border-radius: 3px;'>SD ticket</a> detailing the change before completing the <a href='$form_url' style='color: #0073aa; text-decoration: underline; font-weight: bold; background-color: #f0f8ff; padding: 3px 6px; border-radius: 3px;'>Content Review Form</a>. Please note you will need to include your SD ticket number on the form.</li>" : "") . "
-										</ul>
-										<p style='margin: 0 0 10px 0;'>The content needs to be reviewed by: <strong>" . $date->format( $format_out ) . "</strong></p>
-										<p style='margin: 0 0 10px 0;'>Kind regards</p>
-										<p style='margin: 0;'>Pepper Money UX Team</p>
-									</td>
-								</tr>
-							</table>
-						</td>
-					</tr>
-					<!-- 1 Column Text + Button : END -->
-
-				</table>
-				<!-- Email Body : END -->
-
-				<!--[if mso]>
-								</td>
-								</tr>
-								</table>
-								<![endif]-->
-			</div>
-
-			<!--[if mso | IE]>
-							</td>
-							</tr>
-							</table>
-							<![endif]-->
-		</center>
-	</body>
-
-	</html>
-	"; // phpcs:enable
+	// Load email template.
+	$message = content_audit_load_email_template( 'backend-submission-notification', $template_args );
 
 	// Apply filter to allow adding the form URL to the email template.
 	$message = apply_filters( 'content_audit_email_template', $message, $page_title, $page_url, $date, $page_id );

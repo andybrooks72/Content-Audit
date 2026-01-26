@@ -71,8 +71,25 @@ class ACFAuditFields {
 			)
 		);
 
-		$audit_fields->setLocation( 'post_type', '==', 'page' )
-		->or( 'post_type', '==', 'post' );
+		// Get selected post types from settings.
+		$post_types_settings = get_option( 'content_audit_post_types_settings' );
+		$selected_post_types = isset( $post_types_settings['post_types'] ) && is_array( $post_types_settings['post_types'] )
+			? $post_types_settings['post_types']
+			: array( 'page', 'post' );
+
+		// Build location rules dynamically based on selected post types.
+		if ( ! empty( $selected_post_types ) ) {
+			$location = $audit_fields->setLocation( 'post_type', '==', $selected_post_types[0] );
+
+			// Add additional post types using or() method.
+			for ( $i = 1; $i < count( $selected_post_types ); $i++ ) {
+				$location->or( 'post_type', '==', $selected_post_types[ $i ] );
+			}
+		} else {
+			// Fallback to default if no post types are selected.
+			$audit_fields->setLocation( 'post_type', '==', 'page' )
+				->or( 'post_type', '==', 'post' );
+		}
 
 		add_action(
 			'acf/init',
