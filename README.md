@@ -9,6 +9,11 @@ The Content Audit plugin helps you track and manage content review dates for you
 - **Content Review Form**: Allow stakeholders to submit content reviews through a simple form
 - **Submissions Tracking**: Track all content review submissions in the admin dashboard
 - **Filtering Options**: Filter content by review date (overdue, next 30 days, 3 months, 6 months, etc.)
+- **Customizable Settings**: Tabbed settings interface for easy configuration
+- **Form Customization**: Customize button and link colors for the review form
+- **Email Customization**: Upload custom header images and customize email appearance
+- **Theme Override Support**: Email templates can be overridden in your theme directory
+- **Dynamic Post Type Support**: Automatically adapts labels for Posts, Pages, and custom post types
 
 ## Installation
 1. Upload the `content-audit` folder to the `/wp-content/plugins/` directory
@@ -64,6 +69,29 @@ The form includes:
 - Support ticket URL field (if changes are needed)
 - Next review date selection
 
+### Plugin Settings
+The plugin includes a comprehensive settings page accessible from WordPress Admin > Content Audit > Settings. The settings are organized into three tabs:
+
+#### Plugin Settings Tab
+- **General Settings**: Configure basic plugin behavior
+- **Display Settings**: Customize how content audit information is displayed
+  - Show/hide admin columns
+  - Set base URL for live site links
+  - Configure support ticket URL
+- **Post Types Settings**: Select which post types should have content audit fields
+
+#### Form Settings Tab
+- **Success Message**: Customize the message shown after form submission
+- **Button Background Color**: Choose the background color for form buttons
+- **Button Text Color**: Choose the text color for form buttons
+- **Link Text Color**: Choose the color for links in the form
+
+#### Email Settings Tab
+- **Notification Email**: Email address that receives submission notifications
+- **From Email**: Email address used in the "From" field of emails
+- **From Name**: Name displayed in emails (replaces "Pepper Money UX Team")
+- **Email Header Image**: Upload a custom header image (GIF, PNG, JPEG, max 150KB) for email templates. If no image is uploaded, the site title and tagline will be displayed instead.
+
 ### Viewing Submissions
 1. Go to the WordPress admin dashboard
 2. Click on 'Content Audit' > 'Submissions'
@@ -117,13 +145,41 @@ $audit_fields->addText(
 For more information on using ACF Builder, refer to the [StoutLogic ACF Builder documentation](https://github.com/StoutLogic/acf-builder).
 
 ### Email Templates
-The plugin uses HTML email templates that can be customized through WordPress filters:
+The plugin uses HTML email templates that can be customized in two ways:
+
+#### Theme Override
+You can override email templates by copying them to your theme directory:
+- Copy `templates/email/submission-notification.php` to `your-theme/pm-content-audit/email/submission-notification.php`
+- Copy `templates/email/backend-submission-notification.php` to `your-theme/pm-content-audit/email/backend-submission-notification.php`
+
+This allows you to fully customize the email appearance while maintaining updates to the plugin.
+
+#### Available Templates
+- **submission-notification.php**: Email sent to admins when a stakeholder submits a content review
+- **backend-submission-notification.php**: Email sent to stakeholders when admins trigger a review notification
+
+Both templates support the following customizable elements:
+- Header image (or site title/tagline fallback)
+- Button colors (from Form Settings)
+- Link colors (from Form Settings)
+- From name (from Email Settings)
+
+#### WordPress Filters
+The plugin also provides WordPress filters for advanced customization:
 - `content_audit_email_template` - Filter for the main notification email template
 - `content_audit_submission_email_template` - Filter for the submission confirmation email
 
+### Dynamic Post Type Labels
+The plugin automatically detects and uses appropriate labels for different post types:
+- Standard WordPress posts display as "Post"
+- Pages display as "Page"
+- Custom post types use their registered singular label
+
+This ensures consistent and accurate terminology throughout the plugin interface and email notifications.
+
 ### URL Handling
 The plugin automatically handles URLs to ensure:
-- Content page links in emails and the dashboard point to the live website (https://www.pepper.money)
+- Content page links in emails and the dashboard point to the live website (configured in Display Settings)
 - Form submission links and admin links use the local site URL
 
 ### Database
@@ -145,7 +201,7 @@ The plugin creates a custom database table `wp_content_audit_submissions` to sto
 - Check that the Next Review Date is set correctly
 
 ## Support
-For support, please contact the Pepper Money UX Team.
+For support, please contact Andy Brooks.
 
 ## Credits
-Developed by Pepper Money
+Developed by Andy Brooks
