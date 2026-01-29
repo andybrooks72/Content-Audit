@@ -23,6 +23,7 @@ yarn.lock
 
 # Composer packages
 composer.lock
+/vendor/
 
 # WordPress testing
 /phpunit.xml
