@@ -29,6 +29,57 @@ function content_audit_register_admin_page() {
 add_action( 'admin_menu', 'content_audit_register_admin_page' );
 
 /**
+ * Process Send Email form submission and redirect with success params.
+ * Runs before the content audit page is rendered so we can redirect.
+ *
+ * @return void
+ */
+function content_audit_process_send_email_form() {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+
+	$nonce = isset( $_POST['send_email_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['send_email_nonce'] ) ) : '';
+	if ( ! wp_verify_nonce( $nonce, 'send_email_nonce' ) ) {
+		return;
+	}
+
+	$page_id = isset( $_POST['page_id'] ) ? absint( $_POST['page_id'] ) : 0;
+	if ( ! $page_id ) {
+		return;
+	}
+
+	// Check that a Send Email button was clicked (unique_id is dynamic per row).
+	$send_clicked = false;
+	foreach ( array_keys( $_POST ) as $key ) {
+		if ( strpos( $key, 'send_email_' ) === 0 && '1' === $_POST[ $key ] ) {
+			$send_clicked = true;
+			break;
+		}
+	}
+	if ( ! $send_clicked ) {
+		return;
+	}
+
+	$sent = content_audit_send_review_email( $page_id );
+
+	$filter       = isset( $_POST['filter'] ) ? sanitize_text_field( wp_unslash( $_POST['filter'] ) ) : '30days';
+	$content_type = isset( $_POST['content_type'] ) ? sanitize_text_field( wp_unslash( $_POST['content_type'] ) ) : 'page';
+
+	$redirect_args = array(
+		'page'                     => 'content-audit',
+		'filter'                   => $filter,
+		'content_type'             => $content_type,
+		'content_audit_email_sent' => $sent ? '1' : '0',
+		'content_audit_sent_id'   => $page_id,
+	);
+
+	wp_safe_redirect( add_query_arg( $redirect_args, admin_url( 'admin.php' ) ) );
+	exit;
+}
+add_action( 'load-toplevel_page_content-audit', 'content_audit_process_send_email_form' );
+
+/**
  * Render the Content Audit admin page.
  *
  * @return void
@@ -43,6 +94,20 @@ function content_audit_render_admin_page() {
 	?>
 	<div class="wrap">
 		<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
+		<?php
+		// Show standard WordPress notice when email was sent (after redirect).
+		if ( isset( $_GET['content_audit_email_sent'] ) && isset( $_GET['content_audit_sent_id'] ) ) {
+			$notice_type = '1' === $_GET['content_audit_email_sent'] ? 'success' : 'warning';
+			$message    = '1' === $_GET['content_audit_email_sent']
+				? __( 'Review email has been sent to the stakeholder.', 'ab-content-audit' )
+				: __( 'There was a problem sending the email. Please try again.', 'ab-content-audit' );
+			printf(
+				'<div class="notice notice-%1$s is-dismissible"><p>%2$s</p></div>',
+				esc_attr( $notice_type ),
+				esc_html( $message )
+			);
+		}
+		?>
 		<p><?php esc_html_e( 'Track and manage content review dates for your pages and posts.', 'ab-content-audit' ); ?></p>
 
 		<div id="content-audit-panel">

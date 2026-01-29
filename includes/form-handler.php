@@ -610,9 +610,9 @@ function content_audit_generate_form_url( $content_id ) {
 	// Ensure we're using the form page ID and not the content ID for the URL base.
 	$form_page_url = get_permalink( $form_page_id );
 
-	// Get the content type (post or page).
+	// Use the actual post type (page, post, faq, etc.) so the form URL reflects the content type.
 	$content_post = get_post( $content_id );
-	$content_type = ( 'post' === $content_post->post_type ) ? 'post' : 'page';
+	$content_type = $content_post && $content_post->post_type ? $content_post->post_type : 'page';
 
 	// Generate the URL with parameters.
 	$url = add_query_arg(

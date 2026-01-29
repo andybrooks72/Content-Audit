@@ -114,10 +114,10 @@ function content_audit_activate() {
 }
 register_activation_hook( __FILE__, 'content_audit_activate' );
 
-// Add dependancy for ACF field creation.
+// Add dependency for ACF field creation. Defer until after ACF has loaded (plugin load order: ab-content-audit loads before advanced-custom-fields-pro).
 require_once CONTENT_AUDIT_PLUGIN_DIR . 'vendor/autoload.php';
 require_once CONTENT_AUDIT_PLUGIN_DIR . 'includes/class-acfauditfields.php';
-ContentAudit\ACFAuditFields::initialise();
+add_action( 'plugins_loaded', array( 'ContentAudit\ACFAuditFields', 'initialise' ), 20 );
 
 /**
  * Check and update database tables when plugin is loaded.

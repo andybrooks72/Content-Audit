@@ -340,42 +340,12 @@ function content_audit_display_table() {
 						<input type="hidden" name="send_email_nonce" value="<?php echo esc_attr( $nonce ); ?>">
 						<input type="hidden" name="page_id" value="<?php echo esc_attr( $page_id ); ?>">
 						<input type="hidden" name="content_type" value="<?php echo esc_attr( $content_type ); ?>">
+						<input type="hidden" name="filter" value="<?php echo esc_attr( $filter ); ?>">
 					</form>
 					<?php
-					if ( isset( $_POST['send_email_nonce'] ) ) {
-						$nonce = sanitize_text_field( wp_unslash( $_POST['send_email_nonce'] ) );
-						if ( isset( $_POST[ "$unique_id" ] ) && null !== $nonce && wp_verify_nonce( $nonce, 'send_email_nonce' ) ) {
-							$to = $stakeholder_email;
-
-							// Get the actual post type from the database.
-							$post_obj         = get_post( $page_id );
-							$actual_post_type = $post_obj ? $post_obj->post_type : $content_type;
-							$post_type_obj    = get_post_type_object( $actual_post_type );
-							$type_label       = $post_type_obj ? $post_type_obj->labels->singular_name : ucfirst( $actual_post_type );
-
-							// Use proper translation strings for different content types.
-							/* translators: %1$s: content type label, %2$s: content title */
-							$subject = sprintf( esc_html__( 'The following %1$s requires your attention: %2$s', 'ab-content-audit' ), strtolower( $type_label ), get_the_title() );
-
-							// Set up email headers.
-							$admin_email = get_option( 'admin_email' );
-
-							// Get email settings.
-							$email_settings = content_audit_get_email_settings();
-							$from_email     = $email_settings['from_email'];
-							$from_name      = $email_settings['from_name'];
-
-							$headers = 'From: ' . $from_name . ' <' . $from_email . '>' . "\r\n" .
-								'Reply-To: ' . $email_settings['notification_email'] . "\r\n" .
-								'Content-Type: text/html; charset=UTF-8';
-
-							// Email template with form URL.
-							$message = content_audit_get_email_template( $page_title, $page_url, $date, $format_out, $page_id );
-
-							wp_mail( $to, $subject, $message, $headers );
-
-							echo '<div class="message">✔</div>';
-						}
+					// Show tick for the row that had email sent successfully (after redirect).
+					if ( isset( $_GET['content_audit_email_sent'] ) && '1' === $_GET['content_audit_email_sent'] && isset( $_GET['content_audit_sent_id'] ) && (int) $_GET['content_audit_sent_id'] === (int) $page_id ) {
+						echo '<div class="message">✔</div>';
 					}
 					?>
 					</div>
@@ -411,6 +381,59 @@ function content_audit_display_table() {
 
 		echo '</tbody>';
 		echo '</table>';
+}
+
+/**
+ * Send the content review email for a given post ID.
+ * Used when processing the Send Email form from the content audit screen.
+ *
+ * @param int $page_id The content (post) ID to send the review email for.
+ * @return bool True if the email was sent, false otherwise.
+ */
+function content_audit_send_review_email( $page_id ) {
+	$page_id = absint( $page_id );
+	if ( ! $page_id ) {
+		return false;
+	}
+
+	$content_audit = get_fields( $page_id );
+	if ( empty( $content_audit ) || empty( $content_audit['next_review_date'] ) || empty( $content_audit['stakeholder_name'] ) || empty( $content_audit['stakeholder_email'] ) ) {
+		return false;
+	}
+
+	$page_title        = get_the_title( $page_id );
+	$permalink         = get_permalink( $page_id );
+	$site_url          = site_url();
+	$relative_path     = $permalink ? str_replace( $site_url, '', $permalink ) : '';
+	$display_settings  = content_audit_get_display_settings();
+	$base_url          = isset( $display_settings['base_url'] ) ? $display_settings['base_url'] : home_url();
+	$page_url          = untrailingslashit( $base_url ) . $relative_path;
+	$stakeholder_email = $content_audit['stakeholder_email'];
+	$next_review_date  = $content_audit['next_review_date'];
+	$format_out        = 'F d, Y';
+	$date              = new DateTime( $next_review_date );
+
+	$post_obj         = get_post( $page_id );
+	$actual_post_type = $post_obj ? $post_obj->post_type : 'page';
+	$post_type_obj    = get_post_type_object( $actual_post_type );
+	$type_label       = $post_type_obj ? $post_type_obj->labels->singular_name : ucfirst( $actual_post_type );
+
+	/* translators: %1$s: content type label, %2$s: content title */
+	$subject = sprintf( esc_html__( 'The following %1$s requires your attention: %2$s', 'ab-content-audit' ), strtolower( $type_label ), $page_title );
+
+	$email_settings = content_audit_get_email_settings();
+	$from_email     = $email_settings['from_email'];
+	$from_name      = $email_settings['from_name'];
+
+	$headers = 'From: ' . $from_name . ' <' . $from_email . '>' . "\r\n" .
+		'Reply-To: ' . $email_settings['notification_email'] . "\r\n" .
+		'Content-Type: text/html; charset=UTF-8';
+
+	$message = content_audit_get_email_template( $page_title, $page_url, $date, $format_out, $page_id );
+
+	$sent = wp_mail( $stakeholder_email, $subject, $message, $headers );
+
+	return $sent;
 }
 
 /**
