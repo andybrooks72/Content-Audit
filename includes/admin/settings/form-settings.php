@@ -17,7 +17,7 @@ content_audit_form_settings_section_callback();
 	<tbody>
 		<tr>
 			<th scope="row">
-				<label for="content_audit_success_message"><?php esc_html_e( 'Success Message', 'peppermoney-content-audit' ); ?></label>
+				<label for="content_audit_success_message"><?php esc_html_e( 'Success Message', 'ab-content-audit' ); ?></label>
 			</th>
 			<td>
 				<?php content_audit_success_message_callback(); ?>
@@ -25,7 +25,7 @@ content_audit_form_settings_section_callback();
 		</tr>
 		<tr>
 			<th scope="row">
-				<label for="content_audit_button_background_color"><?php esc_html_e( 'Button Background Color', 'peppermoney-content-audit' ); ?></label>
+				<label for="content_audit_button_background_color"><?php esc_html_e( 'Button Background Color', 'ab-content-audit' ); ?></label>
 			</th>
 			<td>
 				<?php content_audit_button_background_color_callback(); ?>
@@ -33,7 +33,7 @@ content_audit_form_settings_section_callback();
 		</tr>
 		<tr>
 			<th scope="row">
-				<label for="content_audit_button_text_color"><?php esc_html_e( 'Button Text Color', 'peppermoney-content-audit' ); ?></label>
+				<label for="content_audit_button_text_color"><?php esc_html_e( 'Button Text Color', 'ab-content-audit' ); ?></label>
 			</th>
 			<td>
 				<?php content_audit_button_text_color_callback(); ?>
@@ -41,7 +41,7 @@ content_audit_form_settings_section_callback();
 		</tr>
 		<tr>
 			<th scope="row">
-				<label for="content_audit_link_text_color"><?php esc_html_e( 'Link Text Color', 'peppermoney-content-audit' ); ?></label>
+				<label for="content_audit_link_text_color"><?php esc_html_e( 'Link Text Color', 'ab-content-audit' ); ?></label>
 			</th>
 			<td>
 				<?php content_audit_link_text_color_callback(); ?>

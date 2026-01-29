@@ -14,7 +14,7 @@ if ( ! defined( 'WPINC' ) ) {
  * Locate email template file.
  *
  * Checks theme directory first, then falls back to plugin template.
- * Theme template path: your-theme/pm-content-audit/email/{template-name}.php
+ * Theme template path: your-theme/ab-content-audit/email/{template-name}.php
  * Plugin template path: templates/email/{template-name}.php
  *
  * @param string $template_name The template name (without .php extension).
@@ -22,14 +22,14 @@ if ( ! defined( 'WPINC' ) ) {
  */
 function content_audit_locate_email_template( $template_name ) {
 	// Check theme directory first.
-	$theme_template = get_template_directory() . '/pm-content-audit/email/' . $template_name . '.php';
+	$theme_template = get_template_directory() . '/ab-content-audit/email/' . $template_name . '.php';
 	if ( file_exists( $theme_template ) ) {
 		return $theme_template;
 	}
 
 	// Check child theme directory if using child theme.
 	if ( is_child_theme() ) {
-		$child_theme_template = get_stylesheet_directory() . '/pm-content-audit/email/' . $template_name . '.php';
+		$child_theme_template = get_stylesheet_directory() . '/ab-content-audit/email/' . $template_name . '.php';
 		if ( file_exists( $child_theme_template ) ) {
 			return $child_theme_template;
 		}

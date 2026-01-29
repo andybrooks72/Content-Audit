@@ -93,14 +93,14 @@ function content_audit_display_table() {
 				<input type="hidden" name="page" value="content-audit">
 				<input type="hidden" name="content_type" value="<?php echo esc_attr( $content_type ); ?>">
 				<select name="filter">
-					<option value="30days" <?php selected( $filter, '30days' ); ?>><?php esc_html_e( 'Next 30 Days & Overdue', 'peppermoney-content-audit' ); ?></option>
-					<option value="overdue" <?php selected( $filter, 'overdue' ); ?>><?php esc_html_e( 'Overdue Only', 'peppermoney-content-audit' ); ?></option>
-					<option value="3months" <?php selected( $filter, '3months' ); ?>><?php esc_html_e( 'Next 3 Months', 'peppermoney-content-audit' ); ?></option>
-					<option value="6months" <?php selected( $filter, '6months' ); ?>><?php esc_html_e( 'Next 6 Months', 'peppermoney-content-audit' ); ?></option>
-					<option value="12months" <?php selected( $filter, '12months' ); ?>><?php esc_html_e( 'Next 12 Months', 'peppermoney-content-audit' ); ?></option>
-					<option value="all" <?php selected( $filter, 'all' ); ?>><?php esc_html_e( 'All Content', 'peppermoney-content-audit' ); ?></option>
+					<option value="30days" <?php selected( $filter, '30days' ); ?>><?php esc_html_e( 'Next 30 Days & Overdue', 'ab-content-audit' ); ?></option>
+					<option value="overdue" <?php selected( $filter, 'overdue' ); ?>><?php esc_html_e( 'Overdue Only', 'ab-content-audit' ); ?></option>
+					<option value="3months" <?php selected( $filter, '3months' ); ?>><?php esc_html_e( 'Next 3 Months', 'ab-content-audit' ); ?></option>
+					<option value="6months" <?php selected( $filter, '6months' ); ?>><?php esc_html_e( 'Next 6 Months', 'ab-content-audit' ); ?></option>
+					<option value="12months" <?php selected( $filter, '12months' ); ?>><?php esc_html_e( 'Next 12 Months', 'ab-content-audit' ); ?></option>
+					<option value="all" <?php selected( $filter, 'all' ); ?>><?php esc_html_e( 'All Content', 'ab-content-audit' ); ?></option>
 				</select>
-				<input type="submit" class="button" value="<?php esc_attr_e( 'Filter', 'peppermoney-content-audit' ); ?>">
+				<input type="submit" class="button" value="<?php esc_attr_e( 'Filter', 'ab-content-audit' ); ?>">
 			</form>
 		</div>
 		<br class="clear">
@@ -322,7 +322,7 @@ function content_audit_display_table() {
 					// Add edit link for WordPress admin.
 					$edit_link = get_edit_post_link( $page_id );
 					if ( $edit_link ) {
-						echo '<a href="' . esc_url( $edit_link ) . '" class="edit-link" title="' . esc_attr__( 'Edit this content', 'peppermoney-content-audit' ) . '"><span class="dashicons dashicons-edit"></span></a>';
+						echo '<a href="' . esc_url( $edit_link ) . '" class="edit-link" title="' . esc_attr__( 'Edit this content', 'ab-content-audit' ) . '"><span class="dashicons dashicons-edit"></span></a>';
 					}
 					?>
 				</th>
@@ -355,7 +355,7 @@ function content_audit_display_table() {
 
 							// Use proper translation strings for different content types.
 							/* translators: %1$s: content type label, %2$s: content title */
-							$subject = sprintf( esc_html__( 'The following %1$s requires your attention: %2$s', 'peppermoney-content-audit' ), strtolower( $type_label ), get_the_title() );
+							$subject = sprintf( esc_html__( 'The following %1$s requires your attention: %2$s', 'ab-content-audit' ), strtolower( $type_label ), get_the_title() );
 
 							// Set up email headers.
 							$admin_email = get_option( 'admin_email' );
@@ -404,7 +404,7 @@ function content_audit_display_table() {
 		$current_post_type_obj = get_post_type_object( $content_type );
 		$content_type_label    = $current_post_type_obj ? $current_post_type_obj->labels->name : ucfirst( $content_type );
 		/* translators: %s: content type label */
-		echo '<tr><td colspan="6">' . esc_html( sprintf( __( 'No %s found matching the selected criteria.', 'peppermoney-content-audit' ), strtolower( $content_type_label ) ) ) . '</td></tr>';
+		echo '<tr><td colspan="6">' . esc_html( sprintf( __( 'No %s found matching the selected criteria.', 'ab-content-audit' ), strtolower( $content_type_label ) ) ) . '</td></tr>';
 	endif;
 
 		wp_reset_postdata();

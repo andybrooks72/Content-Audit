@@ -1,14 +1,14 @@
 <?php
 /**
- * Plugin Name: Peppermoney Content Audit
- * Plugin URI: https://www.pepper.money
+ * Plugin Name: AB Content Audit
+ * Plugin URI: https://github.com/andybrooks72/Content-Audit
  * Description: Adds a custom Content Audit page to help track and manage content review dates.
  * Version: 1.1.2
  * Author: Andy Brooks
- * Author URI: https://www.pepper.money
- * Text Domain: peppermoney-content-audit
+ * Author URI: https://github.com/andybrooks72/Content-Audit
+ * Text Domain: ab-content-audit
  *
- * @package ContentAudit
+ * @package ABContentAudit
  */
 
 // If this file is called directly, abort.
@@ -145,8 +145,8 @@ add_shortcode( 'content_audit_form', 'content_audit_form_shortcode' );
 function content_audit_add_submissions_page() {
 	add_submenu_page(
 		'content-audit',
-		esc_html__( 'Content Review Submissions', 'peppermoney-content-audit' ),
-		esc_html__( 'Submissions', 'peppermoney-content-audit' ),
+		esc_html__( 'Content Review Submissions', 'ab-content-audit' ),
+		esc_html__( 'Submissions', 'ab-content-audit' ),
 		'manage_options',
 		'content-audit-submissions',
 		'content_audit_render_submissions_page'
@@ -224,7 +224,7 @@ function content_audit_add_uninstall_confirmation() {
 					event.preventDefault();
 
 					// Show confirmation dialog.
-					if (confirm('<?php echo esc_js( __( 'WARNING: Uninstalling the Content Audit plugin will permanently delete all content audit data, including all submissions. This action cannot be undone. Are you sure you want to continue?', 'peppermoney-content-audit' ) ); ?>')) {
+					if (confirm('<?php echo esc_js( __( 'WARNING: Uninstalling the Content Audit plugin will permanently delete all content audit data, including all submissions. This action cannot be undone. Are you sure you want to continue?', 'ab-content-audit' ) ); ?>')) {
 						// If confirmed, follow the original link.
 						window.location.href = this.href;
 					}

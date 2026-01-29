@@ -3,7 +3,7 @@
  * Email template for content review assignment notifications.
  *
  * This template can be overridden by copying it to your theme:
- * your-theme/pm-content-audit/email/backend-submission-notification.php
+ * your-theme/ab-content-audit/email/backend-submission-notification.php
  *
  * @package ContentAudit
  *
@@ -273,18 +273,18 @@ $link_text_color    = isset( $link_text_color ) ? $link_text_color : '#0073aa';
 										<?php
 										/* translators: %1$s: Content type label, %2$s: Content title */
 										echo sprintf(
-											esc_html__( 'You have been assigned a %1$s to review: %2$s', 'peppermoney-content-audit' ),
+											esc_html__( 'You have been assigned a %1$s to review: %2$s', 'ab-content-audit' ),
 											esc_html( strtolower( $content_type_label ) ),
 											'<a href="' . esc_url( $page_url ) . '">' . esc_html( $page_title ) . '</a>'
 										);
 										?>
 									</h1>
-									<p style='margin: 0 0 10px 0;'><?php esc_html_e( 'Please click on the link above to check if the post is still up to date or if it needs editing or removing', 'peppermoney-content-audit' ); ?></p>
+									<p style='margin: 0 0 10px 0;'><?php esc_html_e( 'Please click on the link above to check if the post is still up to date or if it needs editing or removing', 'ab-content-audit' ); ?></p>
 									<p style='margin: 0 0 10px 0;'>
 										<?php
 										/* translators: %s: Email address */
 										echo sprintf(
-											esc_html__( 'If you have any issues accessing the link, email the UX team on %s or contact a member of the team', 'peppermoney-content-audit' ),
+											esc_html__( 'If you have any issues accessing the link, email the UX team on %s or contact a member of the team', 'ab-content-audit' ),
 											'<a href="mailto:ux@pepper.money">ux@pepper.money</a>'
 										);
 										?>
@@ -294,18 +294,18 @@ $link_text_color    = isset( $link_text_color ) ? $link_text_color : '#0073aa';
 							<tr>
 								<td
 									style='padding: 20px; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #555555;'>
-									<p style='margin: 0 0 10px 0;'><?php esc_html_e( 'Once you\'ve finished your review', 'peppermoney-content-audit' ); ?></p>
+									<p style='margin: 0 0 10px 0;'><?php esc_html_e( 'Once you\'ve finished your review', 'ab-content-audit' ); ?></p>
 									<ul style='padding: 0; margin: 0 0 10px 0; list-style-type: disc;'>
 										<li style='margin:0 0 10px 20px;' class='list-item-first'>
 											<?php
 											if ( ! empty( $form_url ) ) {
 												/* translators: %s: Form URL */
 												echo sprintf(
-													esc_html__( 'If the post is still up to date confirm this by completing the %s.', 'peppermoney-content-audit' ),
-													'<a href="' . esc_url( $form_url ) . '" style="color: ' . esc_attr( $link_text_color ) . '; text-decoration: underline; font-weight: bold; background-color: #f0f8ff; padding: 3px 6px; border-radius: 3px;">' . esc_html__( 'Content Review Form', 'peppermoney-content-audit' ) . '</a>'
+													esc_html__( 'If the post is still up to date confirm this by completing the %s.', 'ab-content-audit' ),
+													'<a href="' . esc_url( $form_url ) . '" style="color: ' . esc_attr( $link_text_color ) . '; text-decoration: underline; font-weight: bold; background-color: #f0f8ff; padding: 3px 6px; border-radius: 3px;">' . esc_html__( 'Content Review Form', 'ab-content-audit' ) . '</a>'
 												);
 											} else {
-												esc_html_e( 'If the post is still up to date confirm this by completing the Content Review Form.', 'peppermoney-content-audit' );
+												esc_html_e( 'If the post is still up to date confirm this by completing the Content Review Form.', 'ab-content-audit' );
 											}
 											?>
 										</li>
@@ -314,9 +314,9 @@ $link_text_color    = isset( $link_text_color ) ? $link_text_color : '#0073aa';
 											<?php
 											/* translators: %1$s: Support ticket URL, %2$s: Form URL */
 											echo sprintf(
-												esc_html__( 'If the post needs editing or removing raise an %1$s detailing the change before completing the %2$s. Please note you will need to include your Support ticket number on the form.', 'peppermoney-content-audit' ),
-												'<a href="' . esc_url( $support_ticket_url ) . '" style="color: ' . esc_attr( $link_text_color ) . '; text-decoration: underline; font-weight: bold; background-color: #f0f8ff; padding: 3px 6px; border-radius: 3px;">' . esc_html__( 'Support ticket', 'peppermoney-content-audit' ) . '</a>',
-												'<a href="' . esc_url( $form_url ) . '" style="color: ' . esc_attr( $link_text_color ) . '; text-decoration: underline; font-weight: bold; background-color: #f0f8ff; padding: 3px 6px; border-radius: 3px;">' . esc_html__( 'Content Review Form', 'peppermoney-content-audit' ) . '</a>'
+												esc_html__( 'If the post needs editing or removing raise an %1$s detailing the change before completing the %2$s. Please note you will need to include your Support ticket number on the form.', 'ab-content-audit' ),
+												'<a href="' . esc_url( $support_ticket_url ) . '" style="color: ' . esc_attr( $link_text_color ) . '; text-decoration: underline; font-weight: bold; background-color: #f0f8ff; padding: 3px 6px; border-radius: 3px;">' . esc_html__( 'Support ticket', 'ab-content-audit' ) . '</a>',
+												'<a href="' . esc_url( $form_url ) . '" style="color: ' . esc_attr( $link_text_color ) . '; text-decoration: underline; font-weight: bold; background-color: #f0f8ff; padding: 3px 6px; border-radius: 3px;">' . esc_html__( 'Content Review Form', 'ab-content-audit' ) . '</a>'
 											);
 											?>
 										</li>
@@ -326,12 +326,12 @@ $link_text_color    = isset( $link_text_color ) ? $link_text_color : '#0073aa';
 										<?php
 										/* translators: %s: Review date */
 										echo sprintf(
-											esc_html__( 'The content needs to be reviewed by: %s', 'peppermoney-content-audit' ),
+											esc_html__( 'The content needs to be reviewed by: %s', 'ab-content-audit' ),
 											'<strong>' . esc_html( $review_date ) . '</strong>'
 										);
 										?>
 									</p>
-									<p style='margin: 0 0 10px 0;'><?php esc_html_e( 'Kind regards', 'peppermoney-content-audit' ); ?></p>
+									<p style='margin: 0 0 10px 0;'><?php esc_html_e( 'Kind regards', 'ab-content-audit' ); ?></p>
 									<p style='margin: 0;'><?php echo esc_html( $from_name ); ?></p>
 								</td>
 							</tr>

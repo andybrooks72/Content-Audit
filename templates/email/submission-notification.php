@@ -3,7 +3,7 @@
  * Email template for content review submission notifications.
  *
  * This template can be overridden by copying it to your theme:
- * your-theme/pm-content-audit/email/submission-notification.php
+ * your-theme/ab-content-audit/email/submission-notification.php
  *
  * @package ContentAudit
  *
@@ -274,7 +274,7 @@ $link_text_color    = isset( $link_text_color ) ? $link_text_color : '#0073aa';
 										style='margin: 0 0 10px 0; font-family: sans-serif; font-size: 25px; line-height: 30px; color: #333333; font-weight: normal;'>
 										<?php
 										/* translators: %s: Content title */
-										echo esc_html( sprintf( __( 'Content Review Submission for "%s"', 'peppermoney-content-audit' ), $content_title ) );
+										echo esc_html( sprintf( __( 'Content Review Submission for "%s"', 'ab-content-audit' ), $content_title ) );
 										?>
 									</h1>
 									<p style='margin: 0;'>
@@ -282,7 +282,7 @@ $link_text_color    = isset( $link_text_color ) ? $link_text_color : '#0073aa';
 										/* translators: %s: Stakeholder name */
 										echo sprintf(
 											/* translators: %s: Stakeholder name */
-											esc_html__( 'A content review has been submitted by %s.', 'peppermoney-content-audit' ),
+											esc_html__( 'A content review has been submitted by %s.', 'ab-content-audit' ),
 											'<strong>' . esc_html( $stakeholder_name ) . '</strong>'
 										);
 										?>
@@ -294,41 +294,41 @@ $link_text_color    = isset( $link_text_color ) ? $link_text_color : '#0073aa';
 									style='padding: 20px; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #555555;'>
 									<h2
 										style='margin: 0 0 10px 0; font-family: sans-serif; font-size: 18px; line-height: 22px; color: #333333; font-weight: bold;'>
-										<?php esc_html_e( 'Submission Details:', 'peppermoney-content-audit' ); ?>
+										<?php esc_html_e( 'Submission Details:', 'ab-content-audit' ); ?>
 									</h2>
 									<table style='border-collapse: collapse; width: 100%; margin-bottom: 20px;'>
 										<tr>
-											<th style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; background-color: #f9f9f9; font-weight: 600; font-family: sans-serif; font-size: 15px; line-height: 20px;'><?php esc_html_e( 'Page', 'peppermoney-content-audit' ); ?></th>
+											<th style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; background-color: #f9f9f9; font-weight: 600; font-family: sans-serif; font-size: 15px; line-height: 20px;'><?php esc_html_e( 'Page', 'ab-content-audit' ); ?></th>
 											<td style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 15px; line-height: 20px;'>
 												<a href='<?php echo esc_url( $live_site_url ); ?>'><?php echo esc_html( $content_title ); ?></a>
 											</td>
 										</tr>
 										<tr>
-											<th style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; background-color: #f9f9f9; font-weight: 600; font-family: sans-serif; font-size: 15px; line-height: 20px;'><?php esc_html_e( 'Stakeholder', 'peppermoney-content-audit' ); ?></th>
+											<th style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; background-color: #f9f9f9; font-weight: 600; font-family: sans-serif; font-size: 15px; line-height: 20px;'><?php esc_html_e( 'Stakeholder', 'ab-content-audit' ); ?></th>
 											<td style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 15px; line-height: 20px;'><?php echo esc_html( $stakeholder_name ); ?></td>
 										</tr>
 										<tr>
-											<th style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; background-color: #f9f9f9; font-weight: 600; font-family: sans-serif; font-size: 15px; line-height: 20px;'><?php esc_html_e( 'Department', 'peppermoney-content-audit' ); ?></th>
+											<th style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; background-color: #f9f9f9; font-weight: 600; font-family: sans-serif; font-size: 15px; line-height: 20px;'><?php esc_html_e( 'Department', 'ab-content-audit' ); ?></th>
 											<td style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 15px; line-height: 20px;'><?php echo esc_html( $stakeholder_department ); ?></td>
 										</tr>
 										<tr>
-											<th style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; background-color: #f9f9f9; font-weight: 600; font-family: sans-serif; font-size: 15px; line-height: 20px;'><?php esc_html_e( 'Changes Needed', 'peppermoney-content-audit' ); ?></th>
+											<th style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; background-color: #f9f9f9; font-weight: 600; font-family: sans-serif; font-size: 15px; line-height: 20px;'><?php esc_html_e( 'Changes Needed', 'ab-content-audit' ); ?></th>
 											<td style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 15px; line-height: 20px; <?php echo $needs_changes ? 'color: #d9042b; font-weight: bold;' : 'color: #46b450;'; ?>'>
-												<?php echo $needs_changes ? esc_html__( 'Yes', 'peppermoney-content-audit' ) : esc_html__( 'No', 'peppermoney-content-audit' ); ?>
+												<?php echo $needs_changes ? esc_html__( 'Yes', 'ab-content-audit' ) : esc_html__( 'No', 'ab-content-audit' ); ?>
 											</td>
 										</tr>
 										<?php if ( ! empty( $support_ticket_url ) ) : ?>
 										<tr>
-											<th style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; background-color: #f9f9f9; font-weight: 600; font-family: sans-serif; font-size: 15px; line-height: 20px;'><?php esc_html_e( 'Support Ticket', 'peppermoney-content-audit' ); ?></th>
+											<th style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; background-color: #f9f9f9; font-weight: 600; font-family: sans-serif; font-size: 15px; line-height: 20px;'><?php esc_html_e( 'Support Ticket', 'ab-content-audit' ); ?></th>
 											<td style='text-align: left; padding: 10px; border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 15px; line-height: 20px;'>
-												<a href='<?php echo esc_url( $support_ticket_url ); ?>'><?php esc_html_e( 'View Ticket', 'peppermoney-content-audit' ); ?></a>
+												<a href='<?php echo esc_url( $support_ticket_url ); ?>'><?php esc_html_e( 'View Ticket', 'ab-content-audit' ); ?></a>
 											</td>
 										</tr>
 										<?php endif; ?>
 									</table>
-									<p style='margin: 0 0 10px 0;'><?php esc_html_e( 'You can view all content audit submissions in the admin dashboard.', 'peppermoney-content-audit' ); ?></p>
-									<p style='margin: 0 0 20px 0;'><?php esc_html_e( 'Kind regards,', 'peppermoney-content-audit' ); ?><br><?php echo esc_html( $from_name ); ?></p>
-									<a href='<?php echo esc_url( $submissions_url ); ?>' style='display: block; background-color: <?php echo esc_attr( $button_bg_color ); ?>; color: <?php echo esc_attr( $button_text_color ); ?>; padding: 10px 15px; text-decoration: none; border-radius: 3px; margin-top: 15px;'><?php esc_html_e( 'View All Submissions', 'peppermoney-content-audit' ); ?></a>
+									<p style='margin: 0 0 10px 0;'><?php esc_html_e( 'You can view all content audit submissions in the admin dashboard.', 'ab-content-audit' ); ?></p>
+									<p style='margin: 0 0 20px 0;'><?php esc_html_e( 'Kind regards,', 'ab-content-audit' ); ?><br><?php echo esc_html( $from_name ); ?></p>
+									<a href='<?php echo esc_url( $submissions_url ); ?>' style='display: block; background-color: <?php echo esc_attr( $button_bg_color ); ?>; color: <?php echo esc_attr( $button_text_color ); ?>; padding: 10px 15px; text-decoration: none; border-radius: 3px; margin-top: 15px;'><?php esc_html_e( 'View All Submissions', 'ab-content-audit' ); ?></a>
 								</td>
 							</tr>
 						</table>
