@@ -149,8 +149,8 @@ The plugin uses HTML email templates that can be customized in two ways:
 
 #### Theme Override
 You can override email templates by copying them to your theme directory:
-- Copy `templates/email/submission-notification.php` to `your-theme/pm-content-audit/email/submission-notification.php`
-- Copy `templates/email/backend-submission-notification.php` to `your-theme/pm-content-audit/email/backend-submission-notification.php`
+- Copy `templates/email/submission-notification.php` to `your-theme/ab-content-audit/email/submission-notification.php`
+- Copy `templates/email/backend-submission-notification.php` to `your-theme/ab-content-audit/email/backend-submission-notification.php`
 
 This allows you to fully customize the email appearance while maintaining updates to the plugin.
 

@@ -17,7 +17,7 @@ content_audit_email_settings_section_callback();
 	<tbody>
 		<tr>
 			<th scope="row">
-				<label for="content_audit_notification_email"><?php esc_html_e( 'Notification Email', 'peppermoney-content-audit' ); ?></label>
+				<label for="content_audit_notification_email"><?php esc_html_e( 'Notification Email', 'ab-content-audit' ); ?></label>
 			</th>
 			<td>
 				<?php content_audit_notification_email_callback(); ?>
@@ -25,7 +25,7 @@ content_audit_email_settings_section_callback();
 		</tr>
 		<tr>
 			<th scope="row">
-				<label for="content_audit_from_email"><?php esc_html_e( 'From Email', 'peppermoney-content-audit' ); ?></label>
+				<label for="content_audit_from_email"><?php esc_html_e( 'From Email', 'ab-content-audit' ); ?></label>
 			</th>
 			<td>
 				<?php content_audit_from_email_callback(); ?>
@@ -33,7 +33,7 @@ content_audit_email_settings_section_callback();
 		</tr>
 		<tr>
 			<th scope="row">
-				<label for="content_audit_from_name"><?php esc_html_e( 'From Name', 'peppermoney-content-audit' ); ?></label>
+				<label for="content_audit_from_name"><?php esc_html_e( 'From Name', 'ab-content-audit' ); ?></label>
 			</th>
 			<td>
 				<?php content_audit_from_name_callback(); ?>
@@ -41,7 +41,7 @@ content_audit_email_settings_section_callback();
 		</tr>
 		<tr>
 			<th scope="row">
-				<label for="content_audit_base_url"><?php esc_html_e( 'Base URL', 'peppermoney-content-audit' ); ?></label>
+				<label for="content_audit_base_url"><?php esc_html_e( 'Base URL', 'ab-content-audit' ); ?></label>
 			</th>
 			<td>
 				<?php content_audit_base_url_callback(); ?>
@@ -49,7 +49,7 @@ content_audit_email_settings_section_callback();
 		</tr>
 		<tr>
 			<th scope="row">
-				<label for="content_audit_support_ticket_url"><?php esc_html_e( 'Support Ticket URL', 'peppermoney-content-audit' ); ?></label>
+				<label for="content_audit_support_ticket_url"><?php esc_html_e( 'Support Ticket URL', 'ab-content-audit' ); ?></label>
 			</th>
 			<td>
 				<?php content_audit_support_ticket_url_callback(); ?>
@@ -66,7 +66,7 @@ content_audit_display_settings_section_callback();
 	<tbody>
 		<tr>
 			<th scope="row">
-				<label for="content_audit_show_admin_columns"><?php esc_html_e( 'Show Admin Columns', 'peppermoney-content-audit' ); ?></label>
+				<label for="content_audit_show_admin_columns"><?php esc_html_e( 'Show Admin Columns', 'ab-content-audit' ); ?></label>
 			</th>
 			<td>
 				<?php content_audit_show_admin_columns_callback(); ?>
@@ -83,7 +83,7 @@ content_audit_post_types_settings_section_callback();
 	<tbody>
 		<tr>
 			<th scope="row">
-				<?php esc_html_e( 'Post Types', 'peppermoney-content-audit' ); ?>
+				<?php esc_html_e( 'Post Types', 'ab-content-audit' ); ?>
 			</th>
 			<td>
 				<?php content_audit_post_types_callback(); ?>
